@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
+import { speakText } from "@/lib/tts";
 import type { DrillMode } from "@/lib/supabase/types";
 
 interface DrillItem {
@@ -17,13 +18,27 @@ interface DrillItem {
 
 interface Props { items: DrillItem[]; }
 
+type Mode = DrillItem["mode"];
+
+function getModeRotation(order: string): Mode[] {
+  if (order === "audio")    return ["audio", "ref_to_verse", "finish_it", "type_out"];
+  if (order === "type_out") return ["type_out", "finish_it", "ref_to_verse", "audio"];
+  return ["audio", "finish_it", "type_out", "ref_to_verse"];
+}
+
 export function DrillClient({ items }: Props) {
   const [idx, setIdx] = useState(0);
   const [done, setDone] = useState(false);
   const [results, setResults] = useState<{ grade: number; mode: string }[]>([]);
   const router = useRouter();
 
-  const current = items[idx];
+  const [orderedItems] = useState(() => {
+    const order = localStorage.getItem("bqt_drill_order") ?? "mixed";
+    const rotation = getModeRotation(order);
+    return items.map((item, i) => ({ ...item, mode: rotation[i % rotation.length] }));
+  });
+
+  const current = orderedItems[idx];
 
   const handleResult = useCallback(async (grade: 1 | 2 | 3 | 4, transcript?: string, accuracy?: number) => {
     const start = Date.now();
@@ -38,19 +53,19 @@ export function DrillClient({ items }: Props) {
       accuracy,
     });
 
-    if (idx + 1 >= items.length) {
+    if (idx + 1 >= orderedItems.length) {
       setDone(true);
     } else {
       setIdx(idx + 1);
     }
-  }, [current, idx, items.length]);
+  }, [current, idx, orderedItems.length]);
 
   if (done) {
-    return <SessionComplete results={results} total={items.length} onBack={() => router.push("/home")} />;
+    return <SessionComplete results={results} total={orderedItems.length} onBack={() => router.push("/home")} />;
   }
 
   const vref = `${current.chapter}:${current.verseNum}`;
-  const progress = idx / items.length;
+  const progress = idx / orderedItems.length;
 
   const DrillHeader = () => (
     <div style={{ padding: "4px 22px 14px" }}>
@@ -61,7 +76,7 @@ export function DrillClient({ items }: Props) {
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "var(--bg-deep)", overflow: "hidden" }}>
           <div style={{ width: `${progress * 100}%`, height: "100%", background: "var(--saffron-500)", borderRadius: 2, transition: "width 200ms" }} />
         </div>
-        <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{idx + 1} / {items.length}</div>
+        <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{idx + 1} / {orderedItems.length}</div>
       </div>
     </div>
   );
@@ -97,15 +112,7 @@ function AudioDrill({ header, item, vref, onResult }: {
   ];
   const choices = [vref, ...distractors].sort(() => Math.random() - 0.5);
 
-  const speak = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(item.text);
-      u.rate = 0.85;
-      window.speechSynthesis.speak(u);
-      setPlayed(true);
-    }
-  };
+  const speak = () => { speakText(item.text); setPlayed(true); };
 
   const handleSelect = (choice: string) => {
     if (selected) return;

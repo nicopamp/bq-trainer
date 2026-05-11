@@ -20,6 +20,7 @@ yarn-error.log*
 # misc
 .DS_Store
 *.pem
+*.tsbuildinfo
 
 # claude code — local session state, never commit
 .claude/settings.local.json

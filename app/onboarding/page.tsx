@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     title: "Review smartly",
-    body: "FSRS spaced repetition shows you each verse exactly when you're about to forget it — no wasted reviews.",
+    body: "Spaced repetition shows you each verse exactly when you're about to forget it — no wasted reviews.",
     icon: "chart",
   },
   {

@@ -190,7 +190,8 @@ html, body {
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
-  background: rgba(246, 239, 224, 0.92);
+  z-index: 10;
+  background: rgba(246, 239, 224, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--hairline);

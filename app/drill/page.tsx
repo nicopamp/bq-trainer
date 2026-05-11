@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { DrillClient } from "./DrillClient";
 
 export default async function DrillPage({
@@ -40,7 +41,18 @@ export default async function DrillPage({
   const { data: dueVerses } = await query;
 
   if (!dueVerses || dueVerses.length === 0) {
-    redirect("/home");
+    return (
+      <div className="bqt-screen" style={{ justifyContent: "center", gap: "var(--s-4)", padding: "0 28px" }}>
+        <p className="eyebrow" style={{ color: "var(--leaf-500)" }}>All caught up</p>
+        <p className="t-display" style={{ fontSize: 26, textAlign: "center", lineHeight: 1.15 }}>Nothing due right now</p>
+        <p style={{ fontSize: 14, color: "var(--ink-muted)", textAlign: "center", lineHeight: 1.5 }}>
+          {chapter ? `No reviews due in Acts ${chapter}.` : "No reviews due today."} Keep learning new verses to grow your queue.
+        </p>
+        <Link href="/home" className="btn btn-primary btn-lg" style={{ marginTop: "var(--s-2)" }}>
+          Back to home
+        </Link>
+      </div>
+    );
   }
 
   // Build drill items with assigned modes

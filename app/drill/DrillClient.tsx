@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
+import { speakText } from "@/lib/tts";
 import type { DrillMode } from "@/lib/supabase/types";
 
 interface DrillItem {
@@ -97,15 +98,7 @@ function AudioDrill({ header, item, vref, onResult }: {
   ];
   const choices = [vref, ...distractors].sort(() => Math.random() - 0.5);
 
-  const speak = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(item.text);
-      u.rate = 0.85;
-      window.speechSynthesis.speak(u);
-      setPlayed(true);
-    }
-  };
+  const speak = () => { speakText(item.text); setPlayed(true); };
 
   const handleSelect = (choice: string) => {
     if (selected) return;

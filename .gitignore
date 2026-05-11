@@ -30,5 +30,4 @@ yarn-error.log*
 /test-results/
 /playwright-report/
 
-# generated audio (run `npm run generate-audio` locally or in CI)
-/public/audio/*.mp3
+# audio files are committed — run `npm run generate-audio` once to create them

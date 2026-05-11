@@ -1,0 +1,208 @@
+/* ── Google Fonts ─────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* ── Design tokens ────────────────────────────────────────────────── */
+:root {
+  /* parchment + ink */
+  --bg:         #f6efe0;
+  --bg-deep:    #ebe2cd;
+  --paper:      #fbf6ea;
+  --paper-edge: #efe6cf;
+  --ink:        #1d1813;
+  --ink-soft:   #4a4036;
+  --ink-muted:  #8a7e6c;
+  --hairline:   #d8cdb1;
+
+  /* saffron — primary accent */
+  --saffron-50:  #fbf2dd;
+  --saffron-100: #f5e2b3;
+  --saffron-300: #e6c272;
+  --saffron-500: #c9842c;
+  --saffron-600: #ac6b1f;
+  --saffron-700: #84511a;
+
+  /* indigo — emphasis & links */
+  --indigo-500: #2f3e63;
+  --indigo-600: #25324f;
+
+  /* terracotta — alerts, "again", intensity */
+  --rust-500: #a8451f;
+  --rust-600: #8a3818;
+
+  /* forest — mastered, success */
+  --leaf-500: #5b6e4f;
+  --leaf-600: #485840;
+
+  /* heatmap states */
+  --hm-new:      #ece2c8;
+  --hm-learning: #e6c272;
+  --hm-review:   #c9842c;
+  --hm-mastered: #5b6e4f;
+  --hm-stale:    #a8451f;
+
+  /* radii */
+  --r-xs:  4px;
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* shadows */
+  --sh-1: 0 1px 0 rgba(29,24,19,.04), 0 1px 2px rgba(29,24,19,.05);
+  --sh-2: 0 2px 4px rgba(29,24,19,.06), 0 4px 12px rgba(29,24,19,.06);
+  --sh-3: 0 6px 18px rgba(29,24,19,.10), 0 1px 3px rgba(29,24,19,.06);
+
+  /* type */
+  --font-display: "Fraunces", "Source Serif Pro", Georgia, serif;
+  --font-body:    "Inter Tight", "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* spacing — 4-based */
+  --s-1: 4px;  --s-2: 8px;   --s-3: 12px; --s-4: 16px;
+  --s-5: 20px; --s-6: 24px;  --s-7: 32px; --s-8: 40px;
+  --s-9: 48px; --s-10: 64px;
+}
+
+/* ── Reset + base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Utility classes ──────────────────────────────────────────────── */
+.t-display         { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.012em; }
+.t-display-italic  { font-family: var(--font-display); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+.t-body            { font-family: var(--font-body); font-weight: 400; }
+.t-mono            { font-family: var(--font-mono); font-weight: 500; font-feature-settings: "tnum"; }
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────── */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition: transform 80ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary { background: var(--ink); color: var(--bg); box-shadow: var(--sh-1); }
+.btn-saffron { background: var(--saffron-500); color: #fff; box-shadow: var(--sh-2); }
+.btn-ghost   { background: transparent; color: var(--ink); border: 1px solid var(--hairline); }
+.btn-dark    { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.12); }
+
+.btn-lg { height: 56px; padding: 0 22px; font-size: 16px; border-radius: var(--r-pill); }
+.btn-md { height: 44px; padding: 0 18px; font-size: 15px; border-radius: var(--r-pill); }
+.btn-sm { height: 32px; padding: 0 14px; font-size: 13px; border-radius: var(--r-pill); }
+
+/* ── Chip ─────────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  height: 26px;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.chip-mono { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; }
+
+/* ── Heatmap cell ─────────────────────────────────────────────────── */
+.hm-cell { aspect-ratio: 1; border-radius: 3px; }
+.hm-cell.lvl-new      { background: var(--hm-new); }
+.hm-cell.lvl-learning { background: var(--hm-learning); }
+.hm-cell.lvl-review   { background: var(--hm-review); }
+.hm-cell.lvl-mastered { background: var(--hm-mastered); }
+.hm-cell.lvl-stale    { background: var(--hm-stale); }
+
+/* ── Paper grain texture ──────────────────────────────────────────── */
+.paper-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(rgba(155,130,90,.06) 1px, transparent 1px),
+    radial-gradient(rgba(155,130,90,.04) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 2px;
+  z-index: 0;
+}
+
+/* ── Screen scaffold ──────────────────────────────────────────────── */
+.bqt-screen {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--bg);
+  position: relative;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollable content area ──────────────────────────────────────── */
+.screen-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Bottom safe area for nav ─────────────────────────────────────── */
+.bottom-bar {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: rgba(246, 239, 224, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--hairline);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-bar-dark {
+  background: rgba(29, 24, 19, 0.92);
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Responsive breakpoints ───────────────────────────────────────── */
+@media (min-width: 768px) {
+  .bqt-screen { max-width: 430px; margin: 0 auto; }
+}

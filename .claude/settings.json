@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run type-check)",
+      "Bash(npm run seed)",
+      "Bash(npm run test:e2e)",
+      "Bash(npm run test:e2e *)",
+      "Bash(npm install)",
+      "Bash(npm install *)",
+      "Bash(npx playwright test)",
+      "Bash(npx playwright test *)",
+      "Bash(npx playwright install *)",
+      "Bash(npx playwright show-report)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git pull)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(git tag *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh issue create *)",
+      "Bash(gh issue close *)",
+      "Bash(tar -tf *)",
+      "Bash(tar -xf *)"
+    ]
+  }
+}

@@ -10,6 +10,8 @@
  */
 
 import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import fs from "fs";

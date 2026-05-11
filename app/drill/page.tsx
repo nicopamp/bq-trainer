@@ -41,14 +41,38 @@ export default async function DrillPage({
   const { data: dueVerses } = await query;
 
   if (!dueVerses || dueVerses.length === 0) {
+    // Find the first verse the user hasn't started learning yet
+    const { data: nextNew } = await supabase
+      .from("user_verses")
+      .select("verse_id, verses(chapter, verse)")
+      .eq("user_id", user.id)
+      .eq("state", "new")
+      .order("verse_id")
+      .limit(1)
+      .single();
+
+    const nextVerse = nextNew ? (Array.isArray(nextNew.verses) ? nextNew.verses[0] : nextNew.verses) as any : null;
+
     return (
-      <div className="bqt-screen" style={{ justifyContent: "center", gap: "var(--s-4)", padding: "0 28px" }}>
+      <div className="bqt-screen" style={{ justifyContent: "center", gap: "var(--s-3)", padding: "0 28px" }}>
         <p className="eyebrow" style={{ color: "var(--leaf-500)" }}>All caught up</p>
         <p className="t-display" style={{ fontSize: 26, textAlign: "center", lineHeight: 1.15 }}>Nothing due right now</p>
-        <p style={{ fontSize: 14, color: "var(--ink-muted)", textAlign: "center", lineHeight: 1.5 }}>
-          {chapter ? `No reviews due in Acts ${chapter}.` : "No reviews due today."} Keep learning new verses to grow your queue.
+        <p style={{ fontSize: 14, color: "var(--ink-muted)", textAlign: "center", lineHeight: 1.5, maxWidth: 300 }}>
+          {chapter
+            ? `No reviews due in Acts ${chapter}.`
+            : "No reviews are scheduled for today."}
+          {" "}Drill sessions appear here once you&apos;ve learned verses — each one is scheduled to reappear at the right moment.
         </p>
-        <Link href="/home" className="btn btn-primary btn-lg" style={{ marginTop: "var(--s-2)" }}>
+        {nextVerse ? (
+          <Link
+            href={`/learn/${nextVerse.chapter}/${nextVerse.verse}`}
+            className="btn btn-saffron btn-lg"
+            style={{ marginTop: "var(--s-2)" }}
+          >
+            Learn Acts {nextVerse.chapter}:{nextVerse.verse} →
+          </Link>
+        ) : null}
+        <Link href="/home" className="btn btn-ghost btn-md" style={{ marginTop: nextVerse ? 0 : "var(--s-2)" }}>
           Back to home
         </Link>
       </div>

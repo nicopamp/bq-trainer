@@ -1,9 +1,15 @@
 const PREFERRED_VOICES = [
   "Google US English",
   "Google UK English Female",
-  "Samantha",  // macOS
-  "Karen",     // iOS/macOS
-  "Moira",     // macOS Irish English, often higher quality
+  "Samantha (Premium)",   // iOS 17+ premium
+  "Ava (Premium)",        // iOS 17+ premium
+  "Nicky (Premium)",      // iOS 17+ premium
+  "Samantha (Enhanced)",  // iOS enhanced
+  "Ava (Enhanced)",       // iOS enhanced
+  "Nicky (Enhanced)",     // iOS enhanced
+  "Samantha",             // macOS / iOS standard
+  "Karen",                // iOS/macOS
+  "Moira",                // macOS
 ];
 
 function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
@@ -18,7 +24,7 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
   return voices.find((v) => v.lang.startsWith("en")) ?? null;
 }
 
-export function speakText(text: string, rate = 0.85): void {
+export function speakText(text: string, rate = 0.82, onEnd?: () => void): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
 
@@ -27,6 +33,7 @@ export function speakText(text: string, rate = 0.85): void {
     u.rate = rate;
     const voice = pickVoice(voices);
     if (voice) u.voice = voice;
+    if (onEnd) u.onend = onEnd;
     window.speechSynthesis.speak(u);
   };
 

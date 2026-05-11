@@ -37,7 +37,7 @@ export default async function DrillPage({
       .lte("due_at", dueCutoff)
       .eq("verses.chapter", parseInt(chapter))
       .order("due_at")
-      .limit(30);
+      .limit(60); // Acts 7 is the largest chapter at 60 verses
   } else {
     query = supabase
       .from("user_verses")

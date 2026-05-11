@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { LearnStepHeader } from "@/components/ui/LearnStepHeader";
 import { chunkVerse } from "@/lib/chunking";
 import { advanceLearnStep } from "@/lib/actions";
-import { speakText } from "@/lib/tts";
+import { speakText, speakVerse, stopSpeaking } from "@/lib/tts";
 
 interface Props {
   verseId: number;
@@ -39,27 +39,27 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep 
   if (graduated) return <GraduateStep vref={vref} chapter={chapter} />;
 
   switch (step) {
-    case 0: return <ReadStep text={text} vref={vref} backHref={backHref} onNext={() => advance(1)} saving={saving} />;
+    case 0: return <ReadStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} onNext={() => advance(1)} saving={saving} />;
     case 1: return <ChunkStep text={text} chunks={chunks} vref={vref} backHref={backHref} onNext={() => advance(2)} saving={saving} />;
-    case 2: return <TraceStep text={text} vref={vref} backHref={backHref} onNext={() => advance(3)} saving={saving} />;
+    case 2: return <TraceStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} onNext={() => advance(3)} saving={saving} />;
     case 3: return <RecallStep text={text} vref={vref} backHref={backHref} onNext={() => advance(5)} saving={saving} />;
     default: return <GraduateStep vref={vref} chapter={chapter} />;
   }
 }
 
 // ── Step 0: Read ──────────────────────────────────────────────────
-function ReadStep({ text, vref, backHref, onNext, saving }: {
-  text: string; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function ReadStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
+  text: string; chapter: number; verseNum: number; vref: string; backHref: string; onNext: () => void; saving: boolean;
 }) {
   const [playing, setPlaying] = useState(false);
 
   const handleListen = () => {
     if (playing) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setPlaying(false);
     } else {
       setPlaying(true);
-      speakText(text, 0.82, () => setPlaying(false));
+      speakVerse(chapter, verseNum, text, () => setPlaying(false));
     }
   };
 
@@ -108,7 +108,7 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
 
   const handleSpeak = () => {
     if (playing) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setPlaying(false);
     } else {
       setPlaying(true);
@@ -203,8 +203,8 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
 }
 
 // ── Step 2: Trace ─────────────────────────────────────────────────
-function TraceStep({ text, vref, backHref, onNext, saving }: {
-  text: string; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function TraceStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
+  text: string; chapter: number; verseNum: number; vref: string; backHref: string; onNext: () => void; saving: boolean;
 }) {
   const [revealLevel, setRevealLevel] = useState(0); // 0=first-letter, 1=half, 2=full
   const [playing, setPlaying] = useState(false);
@@ -212,11 +212,11 @@ function TraceStep({ text, vref, backHref, onNext, saving }: {
 
   const handleSpeak = () => {
     if (playing) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setPlaying(false);
     } else {
       setPlaying(true);
-      speakText(text, 0.82, () => setPlaying(false));
+      speakVerse(chapter, verseNum, text, () => setPlaying(false));
     }
   };
 

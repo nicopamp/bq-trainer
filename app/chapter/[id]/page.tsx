@@ -186,7 +186,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
             Learn next
           </Link>
         )}
-        <Link href={`/drill?chapter=${ch}`} className="btn btn-primary btn-md" style={{ flex: 1.4, display: "flex" }}>
+        <Link href={`/drill?chapter=${ch}&force=true`} className="btn btn-primary btn-md" style={{ flex: 1.4, display: "flex" }}>
           Drill chapter {ch}
           <Icon name="chevron-right" size={16} color="var(--bg)" />
         </Link>

@@ -29,3 +29,6 @@ yarn-error.log*
 /playwright/.auth/
 /test-results/
 /playwright-report/
+
+# generated audio (run `npm run generate-audio` locally or in CI)
+/public/audio/*.mp3

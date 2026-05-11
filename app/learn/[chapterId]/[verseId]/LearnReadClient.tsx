@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { LearnStepHeader } from "@/components/ui/LearnStepHeader";
@@ -51,6 +51,18 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep 
 function ReadStep({ text, vref, backHref, onNext, saving }: {
   text: string; vref: string; backHref: string; onNext: () => void; saving: boolean;
 }) {
+  const [playing, setPlaying] = useState(false);
+
+  const handleListen = () => {
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+    } else {
+      setPlaying(true);
+      speakText(text, 0.82, () => setPlaying(false));
+    }
+  };
+
   return (
     <div className="bqt-screen">
       <div className="paper-grain" />
@@ -58,8 +70,8 @@ function ReadStep({ text, vref, backHref, onNext, saving }: {
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
         <div style={{ position: "relative", padding: "40px 8px 24px" }}>
-          <div style={{ position: "absolute", top: -10, left: -2, fontFamily: "var(--font-display)", fontSize: 110, lineHeight: 1, color: "var(--saffron-300)", fontStyle: "italic", opacity: 0.65, pointerEvents: "none" }}>&ldquo;</div>
-          <div className="t-display" style={{ fontSize: 24, lineHeight: 1.45, fontWeight: 400, color: "var(--ink)", position: "relative", zIndex: 1 }}>
+          <div style={{ position: "absolute", top: -10, left: -2, fontFamily: "var(--font-display)", fontSize: 110, lineHeight: 1.2, color: "var(--saffron-300)", fontStyle: "italic", opacity: 0.65, pointerEvents: "none", overflow: "visible" }}>&ldquo;</div>
+          <div className="t-display" style={{ fontSize: 24, lineHeight: 1.5, fontWeight: 400, color: "var(--ink)", position: "relative", zIndex: 1, overflow: "visible" }}>
             {text}
           </div>
           <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
@@ -70,9 +82,9 @@ function ReadStep({ text, vref, backHref, onNext, saving }: {
         </div>
 
         <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
-          <button className="btn btn-primary btn-md" style={{ flex: 1 }} onClick={() => speakText(text)}>
-            <Icon name="play" size={14} color="var(--bg)" />
-            Listen
+          <button className="btn btn-primary btn-md" style={{ flex: 1 }} onClick={handleListen}>
+            <Icon name={playing ? "pause" : "play"} size={14} color="var(--bg)" />
+            {playing ? "Pause" : "Listen"}
           </button>
         </div>
       </div>
@@ -92,6 +104,17 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
   text: string; chunks: string[]; vref: string; backHref: string; onNext: () => void; saving: boolean;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  const handleSpeak = () => {
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+    } else {
+      setPlaying(true);
+      speakText(chunks.slice(0, activeIdx + 1).join(" "), 0.82, () => setPlaying(false));
+    }
+  };
 
   const handleGotIt = () => {
     if (activeIdx < chunks.length - 1) {
@@ -166,8 +189,8 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
           listening · read the highlighted phrase aloud
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={() => speakText(chunks.slice(0, activeIdx + 1).join(" "))}>
-            <Icon name="volume" size={18} color="var(--ink)" />
+          <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={handleSpeak}>
+            <Icon name={playing ? "pause" : "volume"} size={18} color="var(--ink)" />
           </button>
           <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={handleGotIt} disabled={saving}>
             {activeIdx < chunks.length - 1 ? "Got it" : (saving ? "Saving…" : "Got it all")}
@@ -184,7 +207,18 @@ function TraceStep({ text, vref, backHref, onNext, saving }: {
   text: string; vref: string; backHref: string; onNext: () => void; saving: boolean;
 }) {
   const [revealLevel, setRevealLevel] = useState(0); // 0=first-letter, 1=half, 2=full
+  const [playing, setPlaying] = useState(false);
   const words = text.replace(/[.!?]$/, "").split(" ");
+
+  const handleSpeak = () => {
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+    } else {
+      setPlaying(true);
+      speakText(text, 0.82, () => setPlaying(false));
+    }
+  };
 
   return (
     <div className="bqt-screen">
@@ -241,8 +275,8 @@ function TraceStep({ text, vref, backHref, onNext, saving }: {
       </div>
 
       <div className="bottom-bar" style={{ padding: "16px 22px 28px", display: "flex", gap: 10 }}>
-        <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={() => speakText(text)}>
-          <Icon name="volume" size={18} color="var(--ink)" />
+        <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={handleSpeak}>
+          <Icon name={playing ? "pause" : "volume"} size={18} color="var(--ink)" />
         </button>
         <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={onNext} disabled={saving}>
           {saving ? "Saving…" : "Got it — try cold recall"}
@@ -262,6 +296,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
+  const recRef = useRef<any>(null);
 
   const PASSES_NEEDED = 3;
 
@@ -270,14 +305,22 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
     if (next >= PASSES_NEEDED) onNext();
   };
 
+  const stopListening = () => {
+    recRef.current?.stop();
+    recRef.current = null;
+    setListening(false);
+  };
+
   const startListening = () => {
+    if (listening) { stopListening(); return; }
+
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      const next = passes + 1;
-      handlePass(next);
+      handlePass(passes + 1);
       return;
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const rec = new SR();
+    recRef.current = rec;
     rec.continuous = false;
     rec.interimResults = true;
     rec.lang = "en-US";
@@ -298,6 +341,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
     };
 
     rec.onend = () => {
+      recRef.current = null;
       setListening(false);
       if (!finalTranscript) return;
       const target = text.toLowerCase().replace(/[^\w\s]/g, "");
@@ -309,7 +353,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
       if (accuracy >= 0.75) handlePass(passes + 1);
     };
 
-    rec.onerror = () => { setListening(false); };
+    rec.onerror = () => { recRef.current = null; setListening(false); };
     rec.start();
   };
 
@@ -393,7 +437,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
         >
           <Icon name="mic-fill" size={20} color="#fff" />
           <span className="t-display" style={{ fontSize: 16, fontWeight: 500 }}>
-            {listening ? "Listening…" : saving ? "Saving…" : "Tap when ready"}
+            {listening ? "Tap to stop" : saving ? "Saving…" : "Tap when ready"}
           </span>
         </button>
       </div>

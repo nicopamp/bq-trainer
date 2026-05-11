@@ -34,9 +34,14 @@ export function speakText(text: string, rate = 0.85): void {
   if (voices.length > 0) {
     say(voices);
   } else {
+    let spoken = false;
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.onvoiceschanged = null;
-      say(window.speechSynthesis.getVoices());
+      if (!spoken) { spoken = true; say(window.speechSynthesis.getVoices()); }
     };
+    // Fallback for browsers that never fire onvoiceschanged
+    setTimeout(() => {
+      if (!spoken) { spoken = true; say([]); }
+    }, 500);
   }
 }

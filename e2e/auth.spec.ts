@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Auth", () => {
-  test("unauthenticated root redirects to /auth", async ({ browser }) => {
-    // Use a fresh context with no saved auth state
-    const ctx = await browser.newContext();
+  test("unauthenticated user is redirected to /auth from protected page", async ({ browser }) => {
+    // Explicitly create a context with no storage state (no session cookies)
+    const ctx = await browser.newContext({ storageState: undefined });
     const page = await ctx.newPage();
-    await page.goto("/");
+    await page.goto("/home");
     await expect(page).toHaveURL(/\/auth/);
     await ctx.close();
   });

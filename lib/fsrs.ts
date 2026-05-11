@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { createEmptyCard, fsrs, generatorParameters, Rating } = require("ts-fsrs");
+const { createEmptyCard, fsrs, generatorParameters, Rating } = require("ts-fsrs"); // ts-fsrs ESM/CJS interop
 import type { Card } from "ts-fsrs";
 import type { UserVerse, VerseState } from "./supabase/types";
 
@@ -31,8 +30,7 @@ export function toCard(uv: UserVerse): Card {
 }
 
 /** Schedule a review and return the updated fields to persist. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function scheduleReview(uv: UserVerse, rating: any) {
+export function scheduleReview(uv: UserVerse, rating: any) { // any: ts-fsrs Rating enum lacks exported type
   const card = toCard(uv);
   const now = new Date();
   const result = f.next(card, now, rating);
@@ -60,7 +58,6 @@ function fsrsState(s: VerseState): 0 | 1 | 2 | 3 {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deriveState(current: VerseState, rating: any, stability: number): VerseState {
   if (rating === Rating.Again) return current === "mastered" ? "review" : current;
   if (current === "learning" && rating >= Rating.Good) return "review";

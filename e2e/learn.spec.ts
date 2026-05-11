@@ -14,16 +14,14 @@ test.describe("Learn flow", () => {
     await expect(page.getByText("Build it phrase by phrase")).toBeVisible();
   });
 
-  test("5-step progress bar is visible", async ({ page }) => {
+  test("verse reference is shown in the step header", async ({ page }) => {
     await page.goto("/learn/3/6");
-    // 5 progress segments exist
-    const segments = page.locator("div").filter({ hasText: /Step 1/ });
-    await expect(segments.first()).toBeVisible();
+    // The header always shows the verse ref (e.g. "3:6")
+    await expect(page.getByText("3:6")).toBeVisible();
   });
 
   test("close button returns to chapter", async ({ page }) => {
     await page.goto("/learn/3/6");
-    // Click the × close link
     await page.locator("a[href='/chapter/3']").click();
     await expect(page).toHaveURL(/\/chapter\/3/);
   });

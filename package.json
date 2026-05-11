@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "type-check": "tsc --noEmit",
     "seed": "npx tsx scripts/seed-verses.ts",
     "test:e2e": "playwright test",
@@ -21,6 +21,7 @@
     "ts-fsrs": "^4.6.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.59.1",
     "@types/node": "^22.15.17",
     "@types/react": "^19.1.4",

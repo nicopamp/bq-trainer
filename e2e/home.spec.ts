@@ -4,9 +4,7 @@ test.describe("Home screen", () => {
   test("loads and shows Acts heatmap", async ({ page }) => {
     await page.goto("/home");
     await expect(page.getByRole("heading", { name: "Acts" })).toBeVisible();
-    // Mastery legend
     await expect(page.getByText("Mastery · by verse")).toBeVisible();
-    // At least one chapter row
     await expect(page.getByText("Ch. 1")).toBeVisible();
   });
 
@@ -26,6 +24,7 @@ test.describe("Home screen", () => {
     await page.goto("/home");
     await page.getByText("Ch. 1").click();
     await expect(page).toHaveURL(/\/chapter\/1/);
-    await expect(page.getByText("Chapter 1")).toBeVisible();
+    // Use exact: true to avoid matching the "Drill chapter 1" button
+    await expect(page.getByText("Chapter 1", { exact: true })).toBeVisible();
   });
 });

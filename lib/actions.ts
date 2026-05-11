@@ -2,9 +2,9 @@
 
 import { createClient } from "./supabase/server";
 import { scheduleReview, Rating } from "./fsrs";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRating = any;
 import type { UserVerse } from "./supabase/types";
+
+type AnyRating = any; // ts-fsrs Rating enum lacks exported type
 
 /** Submit a drill review result and update FSRS state. */
 export async function submitReview({

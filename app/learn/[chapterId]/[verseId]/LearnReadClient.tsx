@@ -66,7 +66,7 @@ function ReadStep({ text, vref, backHref, onNext, saving }: {
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
         <div style={{ position: "relative", padding: "40px 8px 24px" }}>
-          <div style={{ position: "absolute", top: -10, left: -2, fontFamily: "var(--font-display)", fontSize: 110, lineHeight: 1, color: "var(--saffron-300)", fontStyle: "italic", opacity: 0.65, pointerEvents: "none" }}>"</div>
+          <div style={{ position: "absolute", top: -10, left: -2, fontFamily: "var(--font-display)", fontSize: 110, lineHeight: 1, color: "var(--saffron-300)", fontStyle: "italic", opacity: 0.65, pointerEvents: "none" }}>&ldquo;</div>
           <div className="t-display" style={{ fontSize: 24, lineHeight: 1.45, fontWeight: 400, color: "var(--ink)", position: "relative", zIndex: 1 }}>
             {text}
           </div>

@@ -4,9 +4,7 @@
  */
 import { test as setup } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-
-export const TEST_EMAIL = "e2e@bqtrainer.test";
-export const TEST_PASSWORD = "e2e-test-password-123!";
+import { TEST_EMAIL, TEST_PASSWORD } from "./constants";
 
 setup("create test user", async () => {
   const admin = createClient(

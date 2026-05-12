@@ -53,3 +53,17 @@ To run the seed script you also need `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`
 **Design system:** All CSS variables are in `app/globals.css`. Key tokens: `--saffron-500` (#c9842c) = primary CTA, `--leaf-500` (#5b6e4f) = mastered/success, `--rust-500` (#a8451f) = due/again/streak. Fonts: Fraunces (display serif), Inter Tight (UI), JetBrains Mono (refs/mono). Use `.t-display`, `.t-mono`, `.eyebrow` utility classes. Avoid inline font-family declarations.
 
 **Voice:** `window.speechSynthesis` for TTS (listen buttons). `SpeechRecognition`/`webkitSpeechRecognition` for voice input. Always gate with capability checks and degrade gracefully (manual grade buttons as fallback).
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`nicopamp/bq-trainer`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root (neither exists yet). See `docs/agents/domain.md`.

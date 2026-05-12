@@ -34,7 +34,9 @@
       "Bash(gh issue create *)",
       "Bash(gh issue close *)",
       "Bash(tar -tf *)",
-      "Bash(tar -xf *)"
+      "Bash(tar -xf *)",
+      "Bash(pdftotext *)",
+      "Bash(npm run type-check *)"
     ]
   }
 }

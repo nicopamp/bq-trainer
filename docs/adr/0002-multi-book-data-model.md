@@ -1,0 +1,3 @@
+# Design for multi-book from the start
+
+Bible Quiz competition books rotate each year. Rather than hardcoding Acts 1–9 into the UI and data model, we designed the `verses` table with `book`, `chapter`, `verse`, and `translation` columns from the start, making book selection a data concern rather than a code concern. New competition books are added by rerunning the seed script for the new book; no application code changes are required. The current deployment is seeded with Acts 1–9 KJV only. UI components that display chapter lists, heatmaps, and navigation should treat the active book as a runtime value, not a compile-time constant.

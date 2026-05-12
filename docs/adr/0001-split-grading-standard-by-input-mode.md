@@ -1,0 +1,3 @@
+# Split grading standard by input mode: strict for Type-out, lenient for voice
+
+The app trains word-perfect recall as the default standard, matching competition Quotation Question requirements. However, applying strict word-perfect grading to voice drill modes (Finish-it, Ref-to-verse) would penalize quizzers for speech recognition errors rather than actual recall failures — a particular problem for users with accents, where ASR accuracy is systematically lower. We decided to apply strict character-level grading only to Type-out (keyboard input), and word-overlap-based lenient grading to all voice modes. This preserves a rigorous training path via Type-out while keeping voice drills accessible and not frustrating for a global user base.

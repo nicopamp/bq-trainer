@@ -9,6 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "type-check": "tsc --noEmit",
     "seed": "npx tsx scripts/seed-verses.ts",
+    "generate-audio": "npx tsx scripts/generate-audio.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
@@ -16,6 +17,7 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
     "next": "^15.3.2",
+    "openai": "^6.37.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "ts-fsrs": "^4.6.0"

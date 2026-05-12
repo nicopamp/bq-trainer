@@ -24,9 +24,22 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
   return voices.find((v) => v.lang.startsWith("en")) ?? null;
 }
 
+let currentAudio: HTMLAudioElement | null = null;
+
+export function stopSpeaking(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = "";
+    currentAudio = null;
+  }
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
 export function speakText(text: string, rate = 0.82, onEnd?: () => void): void {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
+  stopSpeaking();
 
   const say = (voices: SpeechSynthesisVoice[]) => {
     const u = new SpeechSynthesisUtterance(text);
@@ -51,4 +64,29 @@ export function speakText(text: string, rate = 0.82, onEnd?: () => void): void {
       if (!spoken) { spoken = true; say([]); }
     }, 500);
   }
+}
+
+export function speakVerse(chapter: number, verse: number, text: string, onEnd?: () => void): void {
+  if (typeof window === "undefined") return;
+  stopSpeaking();
+
+  const url = `/audio/acts_${chapter}_${verse}.mp3`;
+  const audio = new Audio(url);
+  currentAudio = audio;
+
+  audio.onended = () => {
+    currentAudio = null;
+    onEnd?.();
+  };
+
+  audio.onerror = () => {
+    currentAudio = null;
+    // Pre-generated audio not available; fall back to browser TTS
+    speakText(text, 0.82, onEnd);
+  };
+
+  audio.play().catch(() => {
+    currentAudio = null;
+    speakText(text, 0.82, onEnd);
+  });
 }

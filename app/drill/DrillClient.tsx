@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
-import { speakText } from "@/lib/tts";
+import { speakVerse, stopSpeaking } from "@/lib/tts";
 import type { DrillMode } from "@/lib/supabase/types";
 
 interface DrillItem {
@@ -112,7 +112,7 @@ function AudioDrill({ header, item, vref, onResult }: {
   ];
   const choices = [vref, ...distractors].sort(() => Math.random() - 0.5);
 
-  const speak = () => { speakText(item.text); setPlayed(true); };
+  const speak = () => { speakVerse(item.chapter, Number(item.verseNum), item.text); setPlayed(true); };
 
   const handleSelect = (choice: string) => {
     if (selected) return;

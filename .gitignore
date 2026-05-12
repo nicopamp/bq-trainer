@@ -29,3 +29,5 @@ yarn-error.log*
 /playwright/.auth/
 /test-results/
 /playwright-report/
+
+# audio files are committed — run `npm run generate-audio` once to create them

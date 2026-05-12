@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { HMCell } from "@/components/ui/HMCell";
 import type { VerseState } from "@/lib/supabase/types";
+import { getChapterVerses, extractVerse } from "@/lib/supabase/queries";
 
 const CHAPTER_COUNTS: Record<number, number> = {
   1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
@@ -18,17 +19,9 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  // Fetch verses + user state for this chapter
-  const { data: rows } = await supabase
-    .from("verses")
-    .select("id, verse, text, user_verses(state, learn_step, due_at, stability)")
-    .eq("chapter", ch)
-    .eq("book", "Acts")
-    .eq("translation", "KJV")
-    .eq("user_verses.user_id", user.id)
-    .order("verse");
+  const rows = await getChapterVerses(supabase, user.id, ch);
 
-  if (!rows || rows.length === 0) {
+  if (rows.length === 0) {
     // Verses not seeded yet — show a helpful message
     return (
       <div className="bqt-screen" style={{ justifyContent: "center", alignItems: "center", padding: 32 }}>
@@ -42,20 +35,12 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
   }
 
   type Row = typeof rows[number];
-  const getState = (row: Row): VerseState => {
-    const uv = Array.isArray(row.user_verses) ? row.user_verses[0] : row.user_verses;
-    return (uv?.state as VerseState) ?? "new";
-  };
+  const getUV = (row: Row) => extractVerse(row.user_verses);
+  const getState = (row: Row): VerseState => (getUV(row)?.state as VerseState) ?? "new";
+  const getDue = (row: Row): string | null => getUV(row)?.due_at ?? null;
+  const getStep = (row: Row): number => getUV(row)?.learn_step ?? 0;
 
   const now = new Date();
-  const getDue = (row: Row): string | null => {
-    const uv = Array.isArray(row.user_verses) ? row.user_verses[0] : row.user_verses;
-    return uv?.due_at ?? null;
-  };
-  const getStep = (row: Row): number => {
-    const uv = Array.isArray(row.user_verses) ? row.user_verses[0] : row.user_verses;
-    return uv?.learn_step ?? 0;
-  };
 
   const dueTodayCount = rows.filter((r) => {
     const due = getDue(r);

@@ -6,6 +6,12 @@ const f = fsrs(generatorParameters({ enable_fuzz: true, maximum_interval: 365 })
 
 export { Rating };
 
+/** Stability threshold (days) at which a verse transitions from review → mastered. */
+export const MASTERY_STABILITY_DAYS = 30;
+
+/** FSRS field values seeded at Learn Flow graduation (before any real reviews). */
+export const GRADUATION_FSRS_SEED = { stability: 1, difficulty: 5, dueDays: 1 } as const;
+
 export type RatingType = typeof Rating[keyof typeof Rating];
 
 /** Convert a Supabase user_verse row into an FSRS Card. */
@@ -61,7 +67,7 @@ function fsrsState(s: VerseState): 0 | 1 | 2 | 3 {
 function deriveState(current: VerseState, rating: any, stability: number): VerseState {
   if (rating === Rating.Again) return current === "mastered" ? "review" : current;
   if (current === "learning" && rating >= Rating.Good) return "review";
-  if (current === "review" && stability > 30 && rating >= Rating.Good) return "mastered";
+  if (current === "review" && stability > MASTERY_STABILITY_DAYS && rating >= Rating.Good) return "mastered";
   if (current === "mastered" && rating === Rating.Hard) return "review";
   return current;
 }

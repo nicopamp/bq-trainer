@@ -7,6 +7,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { HMCell } from "@/components/ui/HMCell";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { VerseState } from "@/lib/supabase/types";
+import { getUserVerseStates, getStreak, getWeeklyReviews, extractVerse } from "@/lib/supabase/queries";
 
 const CHAPTER_COUNTS: Record<number, number> = {
   1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
@@ -21,26 +22,11 @@ export default async function HomePage() {
   // Initialize user_verses rows on first visit (idempotent — safe to call every load)
   await supabase.rpc("ensure_user_verses", { p_user_id: user.id });
 
-  // Fetch all user verse states
-  const { data: userVerses } = await supabase
-    .from("user_verses")
-    .select("verse_id, state, due_at, verses(chapter, verse)")
-    .eq("user_id", user.id);
-
-  // Streak
-  const { data: streak } = await supabase
-    .from("streaks")
-    .select("current_days")
-    .eq("user_id", user.id)
-    .single();
-
-  // Session stats (this week)
-  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const { data: weekReviews } = await supabase
-    .from("reviews")
-    .select("grade, created_at")
-    .eq("user_id", user.id)
-    .gte("created_at", weekAgo);
+  const [userVerses, streak, weekReviews] = await Promise.all([
+    getUserVerseStates(supabase, user.id),
+    getStreak(supabase, user.id),
+    getWeeklyReviews(supabase, user.id),
+  ]);
 
   // Build chapter → verse → state map
   type VerseMap = Record<number, Record<number, VerseState>>;
@@ -49,18 +35,17 @@ export default async function HomePage() {
   let dueCount = 0;
   let masteredCount = 0;
 
-  for (const uv of userVerses ?? []) {
-    const versesData = uv.verses as unknown as { chapter: number; verse: number } | null;
+  for (const uv of userVerses) {
+    const versesData = extractVerse(uv.verses);
     const chapter = versesData?.chapter;
     const verse = versesData?.verse;
     if (!chapter || !verse) continue;
     if (!verseMap[chapter]) verseMap[chapter] = {};
-    verseMap[chapter][verse] = uv.state as VerseState;
+    verseMap[chapter][verse] = uv.state;
     if (uv.due_at && new Date(uv.due_at) <= now && uv.state !== "new") dueCount++;
     if (uv.state === "mastered" || uv.state === "review") masteredCount++;
   }
 
-  // Drill mode breakdown for today's review card
   const drillModes: [string, number][] = [
     ["audio", Math.ceil(dueCount * 0.35)],
     ["finish-it", Math.ceil(dueCount * 0.4)],
@@ -68,12 +53,10 @@ export default async function HomePage() {
     ["ref → verse", Math.ceil(dueCount * 0.1)],
   ].filter((pair): pair is [string, number] => (pair[1] as number) > 0);
 
-  // Weekly stats
-  const totalReviews = weekReviews?.length ?? 0;
-  const goodReviews = weekReviews?.filter((r) => r.grade >= 3).length ?? 0;
+  const totalReviews = weekReviews.length;
+  const goodReviews = weekReviews.filter((r) => r.grade >= 3).length;
   const recallRate = totalReviews > 0 ? Math.round((goodReviews / totalReviews) * 100) : 0;
 
-  // Find first verse to learn (state = 'new')
   let nextLearnChapter: number | null = null;
   let nextLearnVerse: number | null = null;
   outer: for (let ch = 1; ch <= 9; ch++) {

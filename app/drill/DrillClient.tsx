@@ -5,20 +5,26 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
 import { speakVerse, stopSpeaking } from "@/lib/tts";
+import { calculateWordOverlap, asrAccuracyToGrade } from "@/lib/grading";
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import type { DrillMode } from "@/lib/supabase/types";
 
-interface DrillItem {
+// Shape the server provides — mode is assigned client-side
+export interface DrillItemInput {
   verseId: number;
   chapter: number;
   verseNum: string | number;
   text: string;
-  mode: "audio" | "finish_it" | "type_out" | "ref_to_verse";
   state: string;
 }
 
-interface Props { items: DrillItem[]; }
+interface DrillItem extends DrillItemInput {
+  mode: Mode;
+}
 
-type Mode = DrillItem["mode"];
+interface Props { items: DrillItemInput[]; }
+
+type Mode = "audio" | "finish_it" | "type_out" | "ref_to_verse";
 
 function getModeRotation(order: string): Mode[] {
   if (order === "audio")    return ["audio", "ref_to_verse", "finish_it", "type_out"];
@@ -32,7 +38,7 @@ export function DrillClient({ items }: Props) {
   const [results, setResults] = useState<{ grade: number; mode: string }[]>([]);
   const router = useRouter();
 
-  const [orderedItems] = useState(() => {
+  const [orderedItems] = useState<DrillItem[]>(() => {
     const order = localStorage.getItem("bqt_drill_order") ?? "mixed";
     const rotation = getModeRotation(order);
     return items.map((item, i) => ({ ...item, mode: rotation[i % rotation.length] }));
@@ -102,7 +108,6 @@ function AudioDrill({ header, item, vref, onResult }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
 
-  // Build 4 reference choices including the correct one
   const ch = item.chapter;
   const v = Number(item.verseNum);
   const distractors = [
@@ -131,7 +136,6 @@ function AudioDrill({ header, item, vref, onResult }: {
       </div>
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* player */}
         <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: "var(--r-xl)", padding: 24, marginBottom: 18 }}>
           <button
             style={{ width: 64, height: 64, borderRadius: 32, background: "var(--saffron-500)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(201,132,44,.4)" }}
@@ -160,7 +164,6 @@ function AudioDrill({ header, item, vref, onResult }: {
           </div>
         )}
 
-        {/* choices */}
         <div className="eyebrow" style={{ color: "rgba(255,255,255,.5)", marginBottom: 10 }}>your answer</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {choices.map((choice, i) => {
@@ -212,35 +215,21 @@ function FinishItDrill({ header, item, vref, onResult }: {
   const prompt = words.slice(0, showCount).join(" ");
   const rest = words.slice(showCount).join(" ");
 
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [voiceUnavailable, setVoiceUnavailable] = useState(false);
 
-  const startListening = () => {
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      setTranscript("(voice not available — tap grade)");
-      setAccuracy(null);
-      return;
-    }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    rec.continuous = false; rec.interimResults = false;
-    setListening(true);
-    rec.onresult = (e: any) => {
-      const said = e.results[0][0].transcript;
-      setTranscript(said);
-      const targetWords = rest.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-      const saidWords = said.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-      const matches = saidWords.filter((w: string) => targetWords.includes(w)).length;
-      setAccuracy(matches / targetWords.length);
-      setListening(false);
-    };
-    rec.onerror = () => setListening(false);
-    rec.onend = () => setListening(false);
-    rec.start();
+  const { startListening, transcript, isListening, isSupported } = useSpeechRecognition({
+    onFinal: (said) => setAccuracy(calculateWordOverlap(said, rest)),
+  });
+
+  const handleListen = () => {
+    if (!isSupported) { setVoiceUnavailable(true); return; }
+    startListening();
   };
 
-  const autoGrade = accuracy !== null ? (accuracy >= 0.9 ? 4 : accuracy >= 0.75 ? 3 : accuracy >= 0.5 ? 2 : 1) : null;
+  const displayTranscript = transcript || (voiceUnavailable ? "(voice not available — tap grade)" : "");
+  const autoGrade = accuracy !== null ? asrAccuracyToGrade(accuracy) : null;
+  const showManualGrade = voiceUnavailable || accuracy !== null;
 
   return (
     <div className="bqt-screen">
@@ -263,9 +252,9 @@ function FinishItDrill({ header, item, vref, onResult }: {
         <div className="card" style={{ padding: "24px 20px", minHeight: 200 }}>
           <div className="t-display" style={{ fontSize: 22, lineHeight: 1.5 }}>
             <span style={{ color: "var(--ink)" }}>{prompt}</span>
-            <span style={{ color: "var(--ink-muted)", fontStyle: "italic" }}> {transcript ?? "…"}</span>
+            <span style={{ color: "var(--ink-muted)", fontStyle: "italic" }}> {displayTranscript || "…"}</span>
           </div>
-          {transcript && (
+          {displayTranscript && !voiceUnavailable && (
             <div style={{ marginTop: 16, padding: "10px 14px", background: "var(--bg-deep)", borderRadius: "var(--r-md)" }}>
               <div className="eyebrow" style={{ marginBottom: 4 }}>target ending</div>
               <div className="t-display-italic" style={{ fontSize: 15, color: "var(--ink-soft)", lineHeight: 1.4 }}>{rest}</div>
@@ -273,14 +262,16 @@ function FinishItDrill({ header, item, vref, onResult }: {
           )}
         </div>
 
-        {accuracy !== null && (
-          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: accuracy >= 0.75 ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
+        {showManualGrade && (
+          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: accuracy !== null && accuracy >= 0.75 ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>
-              {accuracy >= 0.75 ? "Well done!" : "Not quite"} · {Math.round(accuracy * 100)}% accuracy
+              {accuracy !== null
+                ? `${accuracy >= 0.75 ? "Well done!" : "Not quite"} · ${Math.round(accuracy * 100)}% accuracy`
+                : "Grade manually"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               {([1,2,3,4] as const).map((g) => (
-                <button key={g} onClick={() => onResult(g, transcript ?? undefined, accuracy)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
+                <button key={g} onClick={() => onResult(g, transcript || undefined, accuracy ?? undefined)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
                   {["Again", "Hard", "Good", "Easy"][g-1]}
                 </button>
               ))}
@@ -290,16 +281,16 @@ function FinishItDrill({ header, item, vref, onResult }: {
       </div>
 
       <div className="bottom-bar" style={{ padding: "16px 22px 28px", display: "flex", gap: 10 }}>
-        {!transcript ? (
+        {!displayTranscript ? (
           <button
-            style={{ flex: 1, height: 64, borderRadius: 32, border: "none", cursor: "pointer", background: listening ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
-            onClick={startListening}
+            style={{ flex: 1, height: 64, borderRadius: 32, border: "none", cursor: "pointer", background: isListening ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+            onClick={handleListen}
           >
             <Icon name="mic-fill" size={20} color="#fff" />
-            <span className="t-display" style={{ fontSize: 16 }}>{listening ? "Listening…" : "Tap & speak"}</span>
+            <span className="t-display" style={{ fontSize: 16 }}>{isListening ? "Listening…" : "Tap & speak"}</span>
           </button>
         ) : autoGrade !== null && (
-          <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={() => onResult(autoGrade as 1|2|3|4, transcript ?? undefined, accuracy ?? undefined)}>
+          <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={() => onResult(autoGrade, transcript || undefined, accuracy ?? undefined)}>
             Next <Icon name="chevron-right" size={18} color="#fff" />
           </button>
         )}
@@ -402,33 +393,20 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4, transcript?: string, accuracy?: number) => void;
 }) {
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
 
-  const startListening = () => {
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+  const { startListening, transcript, isListening, isSupported } = useSpeechRecognition({
+    onFinal: (said) => {
+      setAccuracy(calculateWordOverlap(said, item.text));
       setRevealed(true);
-      return;
-    }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    rec.continuous = false; rec.interimResults = false;
-    setListening(true);
-    rec.onresult = (e: any) => {
-      const said = e.results[0][0].transcript;
-      setTranscript(said);
-      const targetWords = item.text.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-      const saidWords = said.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-      const matches = saidWords.filter((w: string) => targetWords.includes(w)).length;
-      setAccuracy(matches / targetWords.length);
-      setRevealed(true);
-      setListening(false);
-    };
-    rec.onerror = () => { setListening(false); setRevealed(true); };
-    rec.onend = () => setListening(false);
-    rec.start();
+    },
+    onError: () => setRevealed(true),
+  });
+
+  const handleListen = () => {
+    if (!isSupported) { setRevealed(true); return; }
+    startListening();
   };
 
   return (
@@ -442,7 +420,6 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
       </div>
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        {/* big reference */}
         <div style={{ textAlign: "center", padding: "40px 0" }}>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Acts</div>
           <div className="t-display" style={{ fontSize: 72, lineHeight: 1, color: "var(--ink)" }}>{vref}</div>
@@ -467,7 +444,7 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
             <div style={{ fontWeight: 600, marginBottom: 8 }}>{Math.round(accuracy * 100)}% accuracy</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["Again","Hard","Good","Easy"] as const).map((label, i) => (
-                <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4, transcript ?? undefined, accuracy ?? undefined)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
+                <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4, transcript || undefined, accuracy)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
                   {label}
                 </button>
               ))}
@@ -492,11 +469,11 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
             <Icon name="eye" size={18} color="var(--ink)" />
           </button>
           <button
-            style={{ flex: 1, height: 56, borderRadius: 32, border: "none", cursor: "pointer", background: listening ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
-            onClick={startListening}
+            style={{ flex: 1, height: 56, borderRadius: 32, border: "none", cursor: "pointer", background: isListening ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+            onClick={handleListen}
           >
             <Icon name="mic-fill" size={20} color="#fff" />
-            <span className="t-display" style={{ fontSize: 16 }}>{listening ? "Listening…" : "Speak the verse"}</span>
+            <span className="t-display" style={{ fontSize: 16 }}>{isListening ? "Listening…" : "Speak the verse"}</span>
           </button>
         </div>
       )}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Icon } from "@/components/ui/Icon";
+import { getUserVerseStates, getStreak, getWeeklyReviews, extractVerse } from "@/lib/supabase/queries";
 
 const CHAPTER_COUNTS: Record<number, number> = {
   1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
@@ -14,49 +15,30 @@ export default async function ProgressPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  const { data: streak } = await supabase
-    .from("streaks")
-    .select("current_days, best_days")
-    .eq("user_id", user.id)
-    .single();
+  const [userVerses, streak, weekReviews] = await Promise.all([
+    getUserVerseStates(supabase, user.id),
+    getStreak(supabase, user.id),
+    getWeeklyReviews(supabase, user.id),
+  ]);
 
-  const { data: userVerses } = await supabase
-    .from("user_verses")
-    .select("state, verses(chapter)")
-    .eq("user_id", user.id);
-
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select("grade, created_at, drill_mode")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(500);
-
-  // Summary stats
-  const masteredCount = userVerses?.filter((uv) => uv.state === "mastered").length ?? 0;
-  const reviewCount = userVerses?.filter((uv) => uv.state === "review").length ?? 0;
-  const learningCount = userVerses?.filter((uv) => uv.state === "learning").length ?? 0;
+  const masteredCount = userVerses.filter((uv) => uv.state === "mastered").length;
+  const reviewCount = userVerses.filter((uv) => uv.state === "review").length;
+  const learningCount = userVerses.filter((uv) => uv.state === "learning").length;
   const totalActive = masteredCount + reviewCount;
 
-  // Weekly activity
-  const weekAgo = new Date(Date.now() - 7 * 86_400_000);
-  const weekReviews = reviews?.filter((r) => new Date(r.created_at) >= weekAgo) ?? [];
   const weekAccuracy = weekReviews.length > 0
     ? Math.round((weekReviews.filter((r) => r.grade >= 3).length / weekReviews.length) * 100)
     : 0;
 
-  // Chapter progress
   type ChapterStats = { mastered: number; total: number };
   const chapterStats: Record<number, ChapterStats> = {};
   for (const ch of Object.keys(CHAPTER_COUNTS).map(Number)) {
     chapterStats[ch] = { mastered: 0, total: CHAPTER_COUNTS[ch] };
   }
-  for (const uv of userVerses ?? []) {
-    const ch = (uv.verses as unknown as { chapter: number } | null)?.chapter;
+  for (const uv of userVerses) {
+    const ch = extractVerse(uv.verses)?.chapter;
     if (!ch || !chapterStats[ch]) continue;
-    if (uv.state === "mastered" || uv.state === "review") {
-      chapterStats[ch].mastered++;
-    }
+    if (uv.state === "mastered" || uv.state === "review") chapterStats[ch].mastered++;
   }
 
   return (

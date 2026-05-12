@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "./supabase/server";
-import { scheduleReview, Rating } from "./fsrs";
+import { scheduleReview, Rating, GRADUATION_FSRS_SEED } from "./fsrs";
 import type { UserVerse } from "./supabase/types";
 
 type AnyRating = any; // ts-fsrs Rating enum lacks exported type
@@ -72,9 +72,9 @@ export async function advanceLearnStep(verseId: number, nextStep: number) {
       learn_step: isGraduating ? 0 : nextStep,
       state: isGraduating ? "review" : "learning",
       ...(isGraduating && {
-        stability: 1,
-        difficulty: 5,
-        due_at: new Date(Date.now() + 86_400_000).toISOString(), // due in 1 day
+        stability: GRADUATION_FSRS_SEED.stability,
+        difficulty: GRADUATION_FSRS_SEED.difficulty,
+        due_at: new Date(Date.now() + GRADUATION_FSRS_SEED.dueDays * 86_400_000).toISOString(),
       }),
     })
     .eq("user_id", user.id)

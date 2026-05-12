@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { LearnStepHeader } from "@/components/ui/LearnStepHeader";
 import { chunkVerse } from "@/lib/chunking";
 import { advanceLearnStep } from "@/lib/actions";
 import { speakText, speakVerse, stopSpeaking } from "@/lib/tts";
+import { calculateWordOverlap, ASR_PASS_THRESHOLD } from "@/lib/grading";
+import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 
 interface Props {
   verseId: number;
@@ -293,10 +295,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
 }) {
   const [passes, setPasses] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
   const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
-  const recRef = useRef<any>(null);
 
   const PASSES_NEEDED = 3;
 
@@ -305,56 +304,21 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
     if (next >= PASSES_NEEDED) onNext();
   };
 
-  const stopListening = () => {
-    recRef.current?.stop();
-    recRef.current = null;
-    setListening(false);
-  };
+  const { startListening, stopListening, transcript, isListening, isSupported } =
+    useSpeechRecognition({
+      interimResults: true,
+      onFinal: (said) => {
+        const acc = calculateWordOverlap(said, text);
+        setLastAccuracy(acc);
+        if (acc >= ASR_PASS_THRESHOLD) handlePass(passes + 1);
+      },
+    });
 
-  const startListening = () => {
-    if (listening) { stopListening(); return; }
-
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      handlePass(passes + 1);
-      return;
-    }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    recRef.current = rec;
-    rec.continuous = false;
-    rec.interimResults = true;
-    rec.lang = "en-US";
-    setListening(true);
-    setTranscript("");
+  const handleMicTap = () => {
+    if (isListening) { stopListening(); return; }
+    if (!isSupported) { handlePass(passes + 1); return; }
     setLastAccuracy(null);
-
-    let finalTranscript = "";
-
-    rec.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalTranscript += t;
-        else interim += t;
-      }
-      setTranscript(finalTranscript || interim);
-    };
-
-    rec.onend = () => {
-      recRef.current = null;
-      setListening(false);
-      if (!finalTranscript) return;
-      const target = text.toLowerCase().replace(/[^\w\s]/g, "");
-      const targetWords = target.split(/\s+/);
-      const saidWords = finalTranscript.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-      const matches = saidWords.filter((w: string) => targetWords.includes(w)).length;
-      const accuracy = matches / targetWords.length;
-      setLastAccuracy(accuracy);
-      if (accuracy >= 0.75) handlePass(passes + 1);
-    };
-
-    rec.onerror = () => { recRef.current = null; setListening(false); };
-    rec.start();
+    startListening();
   };
 
   const passed = lastAccuracy !== null && lastAccuracy >= 0.75;
@@ -378,7 +342,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
             {revealed ? (
               <div className="t-display" style={{ fontSize: 18, lineHeight: 1.4, color: "var(--ink)", textAlign: "center" }}>{text}</div>
             ) : transcript ? (
-              <div style={{ fontSize: 16, lineHeight: 1.5, color: listening ? "var(--ink-soft)" : passed ? "var(--leaf-500)" : failed ? "var(--rust-500)" : "var(--ink)", fontStyle: "italic", textAlign: "center" }}>
+              <div style={{ fontSize: 16, lineHeight: 1.5, color: isListening ? "var(--ink-soft)" : passed ? "var(--leaf-500)" : failed ? "var(--rust-500)" : "var(--ink)", fontStyle: "italic", textAlign: "center" }}>
                 &ldquo;{transcript}&rdquo;
               </div>
             ) : (
@@ -422,22 +386,22 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
       </div>
 
       <div className="bottom-bar" style={{ padding: "20px 22px 28px", display: "flex", gap: 12, alignItems: "center" }}>
-        <button className="btn btn-ghost btn-md" style={{ width: 50, padding: 0 }} onClick={() => { setRevealed(!revealed); setTranscript(""); setLastAccuracy(null); }}>
+        <button className="btn btn-ghost btn-md" style={{ width: 50, padding: 0 }} onClick={() => { setRevealed(!revealed); setLastAccuracy(null); }}>
           <Icon name={revealed ? "eye-off" : "eye"} size={16} color="var(--ink)" />
         </button>
         <button
           style={{
-            flex: 1, height: 64, borderRadius: 32, border: "none", cursor: listening ? "default" : "pointer",
-            background: listening ? "var(--leaf-500)" : "var(--rust-500)",
+            flex: 1, height: 64, borderRadius: 32, border: "none", cursor: isListening ? "default" : "pointer",
+            background: isListening ? "var(--leaf-500)" : "var(--rust-500)",
             boxShadow: "0 8px 24px rgba(168,69,31,.35)",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#fff",
           }}
-          onClick={startListening}
-          disabled={listening || saving}
+          onClick={handleMicTap}
+          disabled={saving}
         >
           <Icon name="mic-fill" size={20} color="#fff" />
           <span className="t-display" style={{ fontSize: 16, fontWeight: 500 }}>
-            {listening ? "Tap to stop" : saving ? "Saving…" : "Tap when ready"}
+            {isListening ? "Tap to stop" : saving ? "Saving…" : "Tap when ready"}
           </span>
         </button>
       </div>

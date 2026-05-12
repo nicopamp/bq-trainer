@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
 import { speakVerse, stopSpeaking } from "@/lib/tts";
-import { calculateWordOverlap, asrAccuracyToGrade } from "@/lib/grading";
+import { calculateWordOverlap, asrAccuracyToGrade, gradeTypeOut } from "@/lib/grading";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import type { DrillMode } from "@/lib/supabase/types";
 
@@ -306,20 +306,13 @@ function TypeOutDrill({ header, item, vref, onResult }: {
 }) {
   const [typed, setTyped] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const targetWords = item.text.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
 
-  const accuracy = submitted
-    ? (() => {
-        const typedWords = typed.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-        const matches = typedWords.filter((w) => targetWords.includes(w)).length;
-        return matches / targetWords.length;
-      })()
-    : null;
+  const gradeResult = submitted ? gradeTypeOut(typed, item.text) : null;
 
-  const colorWord = (w: string, i: number) => {
-    if (!submitted) return "var(--ink-muted)";
-    const typedWords = typed.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/);
-    return typedWords[i]?.replace(/[^\w]/g, "") === w ? "var(--leaf-500)" : "var(--rust-500)";
+  const handleCheck = () => {
+    setSubmitted(true);
+    const result = gradeTypeOut(typed, item.text);
+    onResult(result.pass ? 3 : 1);
   };
 
   return (
@@ -337,12 +330,12 @@ function TypeOutDrill({ header, item, vref, onResult }: {
       </div>
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
-        {submitted && (
+        {gradeResult && (
           <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}>
             <div className="eyebrow" style={{ marginBottom: 8 }}>original</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {targetWords.map((w, i) => (
-                <span key={i} className="t-display" style={{ fontSize: 16, color: colorWord(w, i), lineHeight: 1.5 }}>{w}</span>
+              {gradeResult.wordResults.map(({ word, correct }, i) => (
+                <span key={i} className="t-display" style={{ fontSize: 16, color: correct ? "var(--leaf-500)" : "var(--rust-500)", lineHeight: 1.5 }}>{word}</span>
               ))}
             </div>
           </div>
@@ -363,9 +356,9 @@ function TypeOutDrill({ header, item, vref, onResult }: {
           }}
         />
 
-        {accuracy !== null && (
-          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: accuracy >= 0.85 ? "var(--leaf-500)" : accuracy >= 0.6 ? "var(--saffron-500)" : "var(--rust-500)", color: "#fff" }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>{Math.round(accuracy * 100)}% accuracy</div>
+        {gradeResult && (
+          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: gradeResult.pass ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>{Math.round(gradeResult.accuracy * 100)}% accuracy</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["Again","Hard","Good","Easy"] as const).map((label, i) => (
                 <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
@@ -379,7 +372,7 @@ function TypeOutDrill({ header, item, vref, onResult }: {
 
       <div className="bottom-bar" style={{ padding: "16px 22px 28px" }}>
         {!submitted ? (
-          <button className="btn btn-primary btn-lg" style={{ width: "100%" }} onClick={() => setSubmitted(true)} disabled={typed.trim().length < 5}>
+          <button className="btn btn-primary btn-lg" style={{ width: "100%" }} onClick={handleCheck} disabled={typed.trim().length < 5}>
             Check <Icon name="check" size={18} color="var(--bg)" />
           </button>
         ) : null}

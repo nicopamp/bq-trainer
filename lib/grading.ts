@@ -38,3 +38,31 @@ export function asrAccuracyToGrade(accuracy: number): 1 | 2 | 3 | 4 {
 
 /** Minimum word-overlap fraction for a Recall step pass. */
 export const ASR_PASS_THRESHOLD = 0.75;
+
+export interface GradeResult {
+  pass: boolean;
+  accuracy: number;
+  wordResults: Array<{ word: string; correct: boolean }>;
+}
+
+/** Word-perfect grading for TypeOut mode. Position-sensitive word-by-word comparison. */
+export function gradeTypeOut(input: string, target: string): GradeResult {
+  const targetWords = normalizeWords(target);
+  const inputWords = normalizeWords(input);
+  if (targetWords.length === 0) return { pass: true, accuracy: 1, wordResults: [] };
+  const wordResults = targetWords.map((word, i) => ({
+    word,
+    correct: inputWords[i] === word,
+  }));
+  const correct = wordResults.filter((r) => r.correct).length;
+  // Extra input words beyond target count against accuracy (strict word-perfect)
+  const denominator = Math.max(targetWords.length, inputWords.length);
+  const accuracy = correct / denominator;
+  return { pass: accuracy === 1, accuracy, wordResults };
+}
+
+/** ASR-tolerant grading for voice modes. Bag-of-words overlap, passes at ≥ 0.75. */
+export function gradeVoice(transcript: string, target: string): GradeResult {
+  const accuracy = calculateWordOverlap(transcript, target);
+  return { pass: accuracy >= ASR_PASS_THRESHOLD, accuracy, wordResults: [] };
+}

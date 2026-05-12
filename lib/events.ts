@@ -6,10 +6,11 @@ import type { Event } from "./supabase/types";
 const MS_PER_DAY = 86_400_000;
 
 export function getDaysUntil(event: Event): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDate = new Date(event.date + "T00:00:00");
-  return Math.round((eventDate.getTime() - today.getTime()) / MS_PER_DAY);
+  const now = new Date();
+  const todayMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const [y, m, d] = event.date.split("-").map(Number);
+  const eventMs = Date.UTC(y, m - 1, d);
+  return Math.round((eventMs - todayMs) / MS_PER_DAY);
 }
 
 // ── Queries ───────────────────────────────────────────────────────

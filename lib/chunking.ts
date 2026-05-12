@@ -16,14 +16,8 @@ export function chunkVerse(text: string): string[] {
     if (words.length <= 8) {
       chunks.push(segment);
     } else {
-      // break long segments at word 6
       for (let i = 0; i < words.length; i += 6) {
-        const slice = words.slice(i, i + 6).join(" ");
-        if (i + 6 < words.length) {
-          chunks.push(slice);
-        } else {
-          chunks.push(slice);
-        }
+        chunks.push(words.slice(i, i + 6).join(" "));
       }
     }
   }

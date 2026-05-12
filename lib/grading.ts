@@ -12,12 +12,22 @@ function normalizeWords(text: string): string[] {
 /**
  * ASR Tolerance: fraction of target words present in the transcript.
  * Accounts for speech recognition errors on KJV archaisms, proper names, accents.
+ * Each target word is counted at most once regardless of repetition in the transcript.
  */
 export function calculateWordOverlap(transcript: string, target: string): number {
   const targetWords = normalizeWords(target);
   if (targetWords.length === 0) return 1;
   const saidWords = normalizeWords(transcript);
-  const matches = saidWords.filter((w) => targetWords.includes(w)).length;
+  const saidCounts = new Map<string, number>();
+  for (const w of saidWords) saidCounts.set(w, (saidCounts.get(w) ?? 0) + 1);
+  let matches = 0;
+  for (const w of targetWords) {
+    const count = saidCounts.get(w) ?? 0;
+    if (count > 0) {
+      matches++;
+      saidCounts.set(w, count - 1);
+    }
+  }
   return matches / targetWords.length;
 }
 

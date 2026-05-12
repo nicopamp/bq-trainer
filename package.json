@@ -10,6 +10,8 @@
     "type-check": "tsc --noEmit",
     "seed": "npx tsx scripts/seed-verses.ts",
     "generate-audio": "npx tsx scripts/generate-audio.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
@@ -32,6 +34,7 @@
     "eslint": "^9.26.0",
     "eslint-config-next": "^15.3.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.6"
   }
 }

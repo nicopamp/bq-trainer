@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { submitReview } from "@/lib/actions";
 import { speakVerse, stopSpeaking } from "@/lib/tts";
-import { calculateWordOverlap, asrAccuracyToGrade, gradeTypeOut } from "@/lib/grading";
+import { gradeVoice, asrAccuracyToGrade, gradeTypeOut } from "@/lib/grading";
+import type { GradeResult } from "@/lib/grading";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import type { DrillMode } from "@/lib/supabase/types";
 
@@ -215,11 +216,11 @@ function FinishItDrill({ header, item, vref, onResult }: {
   const prompt = words.slice(0, showCount).join(" ");
   const rest = words.slice(showCount).join(" ");
 
-  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [voiceUnavailable, setVoiceUnavailable] = useState(false);
 
   const { startListening, transcript, isListening, isSupported } = useSpeechRecognition({
-    onFinal: (said) => setAccuracy(calculateWordOverlap(said, rest)),
+    onFinal: (said) => setGradeResult(gradeVoice(said, rest)),
   });
 
   const handleListen = () => {
@@ -228,8 +229,8 @@ function FinishItDrill({ header, item, vref, onResult }: {
   };
 
   const displayTranscript = transcript || (voiceUnavailable ? "(voice not available — tap grade)" : "");
-  const autoGrade = accuracy !== null ? asrAccuracyToGrade(accuracy) : null;
-  const showManualGrade = voiceUnavailable || accuracy !== null;
+  const autoGrade = gradeResult !== null ? asrAccuracyToGrade(gradeResult.accuracy) : null;
+  const showManualGrade = voiceUnavailable || gradeResult !== null;
 
   return (
     <div className="bqt-screen">
@@ -263,15 +264,15 @@ function FinishItDrill({ header, item, vref, onResult }: {
         </div>
 
         {showManualGrade && (
-          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: accuracy !== null && accuracy >= 0.75 ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
+          <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: "var(--r-md)", background: gradeResult?.pass ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>
-              {accuracy !== null
-                ? `${accuracy >= 0.75 ? "Well done!" : "Not quite"} · ${Math.round(accuracy * 100)}% accuracy`
+              {gradeResult !== null
+                ? `${gradeResult.pass ? "Well done!" : "Not quite"} · ${Math.round(gradeResult.accuracy * 100)}% accuracy`
                 : "Grade manually"}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               {([1,2,3,4] as const).map((g) => (
-                <button key={g} onClick={() => onResult(g, transcript || undefined, accuracy ?? undefined)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
+                <button key={g} onClick={() => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
                   {["Again", "Hard", "Good", "Easy"][g-1]}
                 </button>
               ))}
@@ -290,7 +291,7 @@ function FinishItDrill({ header, item, vref, onResult }: {
             <span className="t-display" style={{ fontSize: 16 }}>{isListening ? "Listening…" : "Tap & speak"}</span>
           </button>
         ) : autoGrade !== null && (
-          <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={() => onResult(autoGrade, transcript || undefined, accuracy ?? undefined)}>
+          <button className="btn btn-saffron btn-lg" style={{ flex: 1 }} onClick={() => onResult(autoGrade, transcript || undefined, gradeResult?.accuracy ?? undefined)}>
             Next <Icon name="chevron-right" size={18} color="#fff" />
           </button>
         )}
@@ -386,12 +387,12 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4, transcript?: string, accuracy?: number) => void;
 }) {
-  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [revealed, setRevealed] = useState(false);
 
   const { startListening, transcript, isListening, isSupported } = useSpeechRecognition({
     onFinal: (said) => {
-      setAccuracy(calculateWordOverlap(said, item.text));
+      setGradeResult(gradeVoice(said, item.text));
       setRevealed(true);
     },
     onError: () => setRevealed(true),
@@ -432,12 +433,12 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
           </div>
         )}
 
-        {accuracy !== null && (
-          <div style={{ marginTop: 14, width: "100%", padding: "14px 18px", borderRadius: "var(--r-md)", background: accuracy >= 0.8 ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>{Math.round(accuracy * 100)}% accuracy</div>
+        {gradeResult !== null && (
+          <div style={{ marginTop: 14, width: "100%", padding: "14px 18px", borderRadius: "var(--r-md)", background: gradeResult.pass ? "var(--leaf-500)" : "var(--rust-500)", color: "#fff" }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>{Math.round(gradeResult.accuracy * 100)}% accuracy</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["Again","Hard","Good","Easy"] as const).map((label, i) => (
-                <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4, transcript || undefined, accuracy)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
+                <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4, transcript || undefined, gradeResult.accuracy)} className="btn btn-sm" style={{ flex: 1, background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}>
                   {label}
                 </button>
               ))}
@@ -445,7 +446,7 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
           </div>
         )}
 
-        {revealed && accuracy === null && (
+        {revealed && gradeResult === null && (
           <div style={{ marginTop: 14, width: "100%", display: "flex", gap: 8 }}>
             {(["Again","Hard","Good","Easy"] as const).map((label, i) => (
               <button key={label} onClick={() => onResult((i + 1) as 1|2|3|4)} className="btn btn-md" style={{ flex: 1, background: i >= 2 ? "var(--leaf-500)" : "var(--bg-deep)", color: i >= 2 ? "#fff" : "var(--ink)", border: "1px solid var(--hairline)" }}>

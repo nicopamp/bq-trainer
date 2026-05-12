@@ -8,8 +8,25 @@ import type { Event } from "@/lib/supabase/types";
 
 const MAX_CHAPTER = 9;
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  fontSize: 15,
+  border: "1px solid var(--hairline)",
+  borderRadius: 8,
+  background: "var(--bg-deep)",
+  color: "var(--ink)",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
 interface EventFormProps {
   event?: Event;
+}
+
+function getErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return String(e);
 }
 
 export function EventFormClient({ event }: EventFormProps) {
@@ -25,6 +42,10 @@ export function EventFormClient({ event }: EventFormProps) {
 
   const canSave = name.trim().length > 0 && date.length > 0 && endChapter >= 1 && endChapter <= MAX_CHAPTER;
 
+  let saveButtonLabel = "Create Event";
+  if (saving) saveButtonLabel = "Saving…";
+  else if (isEditing) saveButtonLabel = "Save Changes";
+
   const handleSave = async () => {
     if (!canSave || saving) return;
     setSaving(true);
@@ -37,8 +58,8 @@ export function EventFormClient({ event }: EventFormProps) {
       }
       router.push("/settings/events");
       router.refresh();
-    } catch (e: any) {
-      setError(e.message ?? "Failed to save event");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Failed to save event");
       setSaving(false);
     }
   };
@@ -51,8 +72,8 @@ export function EventFormClient({ event }: EventFormProps) {
       await deleteEvent({ id: event.id });
       router.push("/settings/events");
       router.refresh();
-    } catch (e: any) {
-      setError(e.message ?? "Failed to delete event");
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || "Failed to delete event");
       setDeleting(false);
     }
   };
@@ -76,7 +97,6 @@ export function EventFormClient({ event }: EventFormProps) {
 
       <div className="screen-scroll" style={{ padding: "0 22px 22px", position: "relative", zIndex: 1 }}>
         <div className="card" style={{ padding: 18 }}>
-          {/* Name */}
           <label style={{ display: "block", marginBottom: 16 }}>
             <span className="eyebrow" style={{ marginBottom: 6, display: "block" }}>Event name</span>
             <input
@@ -84,42 +104,20 @@ export function EventFormClient({ event }: EventFormProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. League Meet"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                fontSize: 15,
-                border: "1px solid var(--hairline)",
-                borderRadius: 8,
-                background: "var(--bg-deep)",
-                color: "var(--ink)",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </label>
 
-          {/* Date */}
           <label style={{ display: "block", marginBottom: 16 }}>
             <span className="eyebrow" style={{ marginBottom: 6, display: "block" }}>Date</span>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                fontSize: 15,
-                border: "1px solid var(--hairline)",
-                borderRadius: 8,
-                background: "var(--bg-deep)",
-                color: "var(--ink)",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </label>
 
-          {/* End chapter */}
           <label style={{ display: "block", marginBottom: 0 }}>
             <span className="eyebrow" style={{ marginBottom: 6, display: "block" }}>Scope (chapters 1–N)</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -170,7 +168,7 @@ export function EventFormClient({ event }: EventFormProps) {
             fontWeight: 600,
           }}
         >
-          {saving ? "Saving…" : isEditing ? "Save Changes" : "Create Event"}
+          {saveButtonLabel}
         </button>
 
         {isEditing && (

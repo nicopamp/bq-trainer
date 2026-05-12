@@ -33,7 +33,6 @@ export async function getNextEvent(
 export interface ReadinessSummary {
   inScope: number;
   mastered: number;
-  total: number;
 }
 
 export async function getReadinessSummary(
@@ -48,15 +47,15 @@ export async function getReadinessSummary(
     .lte("verses.chapter", event.end_chapter);
 
   if (!verses || verses.length === 0) {
-    return { inScope: 0, mastered: 0, total: 0 };
+    return { inScope: 0, mastered: 0 };
   }
 
-  const total = verses.length;
+  const inScope = verses.length;
   const mastered = verses.filter(
     (v: any) => v.state === "review" || v.state === "mastered"
   ).length;
 
-  return { inScope: total, mastered, total };
+  return { inScope, mastered };
 }
 
 export async function getUserEvents(

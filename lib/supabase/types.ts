@@ -51,6 +51,15 @@ export interface Streak {
   last_day: string | null;
 }
 
+export interface Event {
+  id: number;
+  user_id: string;
+  name: string;
+  date: string; // ISO date string "YYYY-MM-DD"
+  end_chapter: number;
+  created_at: string;
+}
+
 // Joined type returned by home/chapter queries
 export interface VerseWithState extends Verse {
   state: VerseState;

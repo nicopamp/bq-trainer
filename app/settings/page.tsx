@@ -133,6 +133,23 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Competition Season */}
+            <button
+              onClick={() => router.push("/settings/events")}
+              style={{
+                width: "100%", padding: "14px 16px",
+                display: "flex", alignItems: "center", gap: 12,
+                background: "none", border: "none", cursor: "pointer", textAlign: "left",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--bg-deep)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon name="calendar" size={16} color="var(--ink-soft)" />
+              </div>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>Competition Season</span>
+              <Icon name="chevron-right" size={16} color="var(--ink-muted)" />
+            </button>
+
             {/* Chapters (read-only) */}
             <button
               disabled

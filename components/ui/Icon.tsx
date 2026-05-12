@@ -62,6 +62,12 @@ export function Icon({ name, size = 20, color = "currentColor", strokeWidth = 1.
       return <svg viewBox="0 0 24 24" {...s}><path d="M5 12h14M12 5l7 7-7 7" /></svg>;
     case "log-out":
       return <svg viewBox="0 0 24 24" {...s}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>;
+    case "calendar":
+      return <svg viewBox="0 0 24 24" {...s}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>;
+    case "plus":
+      return <svg viewBox="0 0 24 24" {...s}><path d="M12 5v14M5 12h14" /></svg>;
+    case "trash":
+      return <svg viewBox="0 0 24 24" {...s}><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>;
     case "trophy":
       return <svg viewBox="0 0 24 24" {...s}><path d="M6 9H4a2 2 0 0 1-2-2V5h4M18 9h2a2 2 0 0 0 2-2V5h-4M8 21h8M12 17v4M12 3v14M6 9a6 6 0 0 0 12 0V3H6v6z" /></svg>;
     case "chart":

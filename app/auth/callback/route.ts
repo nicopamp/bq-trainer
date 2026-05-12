@@ -5,6 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/home";
 
   if (!code) {
@@ -31,6 +32,11 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Password recovery links land here — send user to set-password page
+  if (type === "recovery") {
+    return NextResponse.redirect(`${origin}/auth/set-password`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

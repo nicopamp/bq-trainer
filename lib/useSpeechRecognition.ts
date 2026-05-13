@@ -26,12 +26,14 @@ export function useSpeechRecognition({
     typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
-  // Stop mic when the component unmounts (e.g. user navigates away mid-session).
+  // Destroy the cached session when recognition options change so the next
+  // startListening call picks up the new config. Also destroys on unmount.
   useEffect(() => {
     return () => {
       sessionRef.current?.destroy();
+      sessionRef.current = null;
     };
-  }, []);
+  }, [interimResults, lang]);
 
   const stopListening = useCallback(() => {
     sessionRef.current?.stop();

@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createSRSession, type SRSession } from "@/lib/speechRecognitionSession";
 
 interface Options {
   interimResults?: boolean;
@@ -15,7 +16,7 @@ export function useSpeechRecognition({
 }: Options = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const recRef = useRef<any>(null);
+  const sessionRef = useRef<SRSession | null>(null);
   const onFinalRef = useRef(onFinal);
   const onErrorRef = useRef(onError);
   onFinalRef.current = onFinal;
@@ -25,51 +26,46 @@ export function useSpeechRecognition({
     typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
+  // Stop mic when the component unmounts (e.g. user navigates away mid-session).
+  useEffect(() => {
+    return () => {
+      sessionRef.current?.destroy();
+    };
+  }, []);
+
   const stopListening = useCallback(() => {
-    recRef.current?.stop();
-    recRef.current = null;
+    sessionRef.current?.stop();
     setIsListening(false);
   }, []);
 
   const startListening = useCallback(() => {
     if (!isSupported) return;
 
-    const SR =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    recRef.current = rec;
-    rec.continuous = false;
-    rec.interimResults = interimResults;
-    rec.lang = lang;
+    // Lazily create the session once; reuse on every subsequent startListening call
+    // to avoid browsers re-prompting for mic permission on each new SR instance.
+    if (!sessionRef.current) {
+      const SR =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      sessionRef.current = createSRSession(
+        SR,
+        { interimResults, lang },
+        {
+          onTranscript: (text) => setTranscript(text),
+          onEnd: (finalText) => {
+            setIsListening(false);
+            if (finalText) onFinalRef.current?.(finalText);
+          },
+          onError: () => {
+            setIsListening(false);
+            onErrorRef.current?.();
+          },
+        }
+      );
+    }
 
-    setIsListening(true);
     setTranscript("");
-
-    let finalText = "";
-
-    rec.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t;
-        else interim += t;
-      }
-      setTranscript(finalText || interim);
-    };
-
-    rec.onend = () => {
-      recRef.current = null;
-      setIsListening(false);
-      if (finalText) onFinalRef.current?.(finalText);
-    };
-
-    rec.onerror = () => {
-      recRef.current = null;
-      setIsListening(false);
-      onErrorRef.current?.();
-    };
-
-    rec.start();
+    setIsListening(true);
+    sessionRef.current.start();
   }, [isSupported, interimResults, lang]);
 
   return { startListening, stopListening, transcript, isListening, isSupported };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { chunkVerse } from "@/lib/chunking";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
@@ -9,26 +9,121 @@ import { gradeVoice, asrAccuracyToGrade, gradeTypeOut } from "@/lib/grading";
 import type { GradeResult } from "@/lib/grading";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { useDrillSession } from "./useDrillSession";
-import type { DrillItemInput, DrillItem } from "./useDrillSession";
+import type { DrillItemInput, DrillItem, ModeProgress } from "./useDrillSession";
 
 export type { DrillItemInput };
 
-interface Props { items: DrillItemInput[]; }
+// Mutable ref holding the active keyboard shortcut handlers.
+// Mode components write to this ref as their available actions change.
+type ShortcutHandlers = {
+  grade: ((g: 1 | 2 | 3 | 4) => void) | null;
+  reveal: (() => void) | null;
+};
+type ShortcutRef = React.MutableRefObject<ShortcutHandlers>;
 
-export function DrillClient({ items }: Props) {
-  const router = useRouter();
-  const session = useDrillSession(items);
+const MODE_LABELS: Record<string, string> = {
+  audio: "Audio",
+  finish_it: "Finish it",
+  type_out: "Type out",
+  ref_to_verse: "Ref → verse",
+};
 
-  if (session.done) {
-    return <SessionComplete results={session.results} total={session.total} onBack={() => router.push("/home")} />;
-  }
+// ── Drill sidebar ──────────────────────────────────────────────────
+function DrillSidebar({ modeProgress, idx, total, progress, book, onEnd }: {
+  modeProgress: ModeProgress[];
+  idx: number;
+  total: number;
+  progress: number;
+  book: string;
+  onEnd: () => void;
+}) {
+  return (
+    <aside className="drill-sidebar">
+      {/* End session */}
+      <button
+        onClick={onEnd}
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 16px 14px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.65)", width: "100%", textAlign: "left" }}
+      >
+        <Icon name="close" size={18} color="rgba(255,255,255,0.65)" />
+        <span style={{ fontSize: 13 }}>End session</span>
+      </button>
 
-  const { current, idx, total, progress, vref, handleResult } = session;
+      {/* Session title */}
+      <div style={{ padding: "0 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="eyebrow" style={{ color: "var(--saffron-300)", marginBottom: 2, fontSize: 10 }}>Today&apos;s review</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{book} · KJV</div>
+      </div>
 
-  const DrillHeader = () => (
-    <div style={{ padding: "4px 22px 14px" }}>
+      {/* Overall progress */}
+      <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Progress</span>
+          <span className="t-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{idx + 1} / {total}</span>
+        </div>
+        <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
+          <div style={{ width: `${progress * 100}%`, height: "100%", background: "var(--saffron-500)", borderRadius: 2, transition: "width 200ms" }} />
+        </div>
+      </div>
+
+      {/* Per-mode rows */}
+      <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 14, flex: 1 }}>
+        {modeProgress.map(({ mode, total: mTotal, completed, status }) => {
+          const barColor =
+            status === "done" ? "var(--leaf-500)" :
+            status === "active" ? "var(--saffron-500)" :
+            null;
+          const labelColor = status === "active" ? "#fff" : "rgba(255,255,255,0.45)";
+          return (
+            <div key={mode}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: labelColor, fontWeight: status === "active" ? 600 : 400 }}>
+                  {MODE_LABELS[mode] ?? mode}
+                </span>
+                <span className="t-mono" style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+                  {completed} / {mTotal}
+                </span>
+              </div>
+              <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                {barColor && (
+                  <div style={{ width: `${(completed / mTotal) * 100}%`, height: "100%", background: barColor, borderRadius: 2, transition: "width 200ms" }} />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Keyboard shortcuts panel */}
+      <div style={{ padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="eyebrow" style={{ color: "rgba(255,255,255,0.25)", marginBottom: 10, fontSize: 9 }}>Keyboard shortcuts</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {[
+            ["Reveal", "R"],
+            ["Skip", "↓"],
+            ["Again", "1"],
+            ["Hard", "2"],
+            ["Good", "3"],
+            ["Easy", "4"],
+          ].map(([label, key]) => (
+            <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{label}</span>
+              <kbd style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.08)", borderRadius: 4, color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-mono)" }}>{key}</kbd>
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ── Drill header (mobile only — hidden at ≥768px via .drill-header) ─
+function DrillHeader({ idx, total, progress, onBack }: {
+  idx: number; total: number; progress: number; onBack: () => void;
+}) {
+  return (
+    <div className="drill-header" style={{ padding: "4px 22px 14px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", lineHeight: 0, color: "var(--ink-soft)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", lineHeight: 0, color: "var(--ink-soft)" }}>
           <Icon name="close" size={22} color="var(--ink-soft)" />
         </button>
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "var(--bg-deep)", overflow: "hidden" }}>
@@ -38,24 +133,95 @@ export function DrillClient({ items }: Props) {
       </div>
     </div>
   );
+}
 
+interface Props { items: DrillItemInput[]; }
+
+export function DrillClient({ items }: Props) {
+  const router = useRouter();
+  const session = useDrillSession(items);
+
+  const shortcutRef = useRef<ShortcutHandlers>({ grade: null, reveal: null });
+
+  // Keep a stable ref to handleResult so the keydown handler never goes stale
+  const handleResultRef = useRef(session.handleResult);
+  handleResultRef.current = session.handleResult;
+
+  // Reset shortcuts whenever the active item changes
+  const prevIdx = useRef(-1);
+  if (prevIdx.current !== session.idx) {
+    shortcutRef.current = { grade: null, reveal: null };
+    prevIdx.current = session.idx;
+  }
+
+  // Global keyboard shortcut listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "r" || e.key === "R") {
+        shortcutRef.current.reveal?.();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        handleResultRef.current(1); // skip = grade Again
+      } else if (e.key === "1") shortcutRef.current.grade?.(1);
+      else if (e.key === "2") shortcutRef.current.grade?.(2);
+      else if (e.key === "3") shortcutRef.current.grade?.(3);
+      else if (e.key === "4") shortcutRef.current.grade?.(4);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []); // reads from refs — no deps needed
+
+  if (session.done) {
+    return <SessionComplete results={session.results} total={session.total} onBack={() => router.push("/home")} />;
+  }
+
+  const { current, idx, total, progress, vref, modeProgress, handleResult } = session;
+
+  const header = (
+    <DrillHeader idx={idx} total={total} progress={progress} onBack={() => router.back()} />
+  );
+
+  let modeContent: React.ReactNode;
   switch (current.mode) {
     case "audio":
-      return <AudioDrill header={<DrillHeader />} item={current} vref={vref} onResult={handleResult} />;
+      modeContent = <AudioDrill key={idx} header={header} item={current} vref={vref} onResult={handleResult} shortcuts={shortcutRef} />;
+      break;
     case "finish_it":
-      return <FinishItDrill header={<DrillHeader />} item={current} vref={vref} onResult={handleResult} />;
+      modeContent = <FinishItDrill key={idx} header={header} item={current} vref={vref} onResult={handleResult} shortcuts={shortcutRef} />;
+      break;
     case "type_out":
-      return <TypeOutDrill header={<DrillHeader />} item={current} vref={vref} onResult={handleResult} />;
+      modeContent = <TypeOutDrill key={idx} header={header} item={current} vref={vref} onResult={handleResult} shortcuts={shortcutRef} />;
+      break;
     case "ref_to_verse":
-      return <RefToVerseDrill header={<DrillHeader />} item={current} vref={vref} onResult={handleResult} />;
+      modeContent = <RefToVerseDrill key={idx} header={header} item={current} vref={vref} onResult={handleResult} shortcuts={shortcutRef} />;
+      break;
   }
+
+  return (
+    <div className="drill-wrapper">
+      <DrillSidebar
+        modeProgress={modeProgress}
+        idx={idx}
+        total={total}
+        progress={progress}
+        book={current.book}
+        onEnd={() => router.back()}
+      />
+      <div className="drill-main">
+        {modeContent}
+      </div>
+    </div>
+  );
 }
 
 // ── Audio Drill ────────────────────────────────────────────────────
 // Three-phase flow: listen (opening chunk TTS) → speak (complete verse) → ref (identify reference)
-function AudioDrill({ header, item, vref, onResult }: {
+function AudioDrill({ header, item, vref, onResult, shortcuts }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4, transcript?: string, accuracy?: number) => void;
+  shortcuts: ShortcutRef;
 }) {
   const [phase, setPhase] = useState<"listen" | "speak" | "ref">("listen");
   const [voiceGrade, setVoiceGrade] = useState<1|2|3|4>(1);
@@ -87,6 +253,18 @@ function AudioDrill({ header, item, vref, onResult }: {
       setVoiceGrade(asrAccuracyToGrade(result.accuracy));
     },
   });
+
+  const showManualGrade = voiceUnavailable || gradeResult !== null;
+
+  // Register grade shortcuts in speak phase when grade buttons are visible
+  useEffect(() => {
+    if (phase !== "speak" || !showManualGrade) { shortcuts.current.grade = null; return; }
+    shortcuts.current.grade = (g) => {
+      setVoiceGrade(g);
+      setPhase("ref");
+    };
+    return () => { shortcuts.current.grade = null; };
+  }, [phase, showManualGrade, shortcuts]);
 
   const handleListen = () => {
     if (!isSupported) { setVoiceUnavailable(true); return; }
@@ -134,8 +312,6 @@ function AudioDrill({ header, item, vref, onResult }: {
 
   // ── Speak phase ──
   if (phase === "speak") {
-    const showManualGrade = voiceUnavailable || gradeResult !== null;
-
     return (
       <div className="bqt-screen" style={{ background: "var(--ink)", color: "#fff" }}>
         {header}
@@ -272,9 +448,10 @@ function AudioDrill({ header, item, vref, onResult }: {
 }
 
 // ── Finish-it Drill ────────────────────────────────────────────────
-function FinishItDrill({ header, item, vref, onResult }: {
+function FinishItDrill({ header, item, vref, onResult, shortcuts }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4, transcript?: string, accuracy?: number) => void;
+  shortcuts: ShortcutRef;
 }) {
   const words = item.text.split(" ");
   const showCount = Math.min(3, Math.floor(words.length * 0.25));
@@ -296,6 +473,13 @@ function FinishItDrill({ header, item, vref, onResult }: {
   const displayTranscript = transcript || (voiceUnavailable ? "(voice not available — tap grade)" : "");
   const autoGrade = gradeResult !== null ? asrAccuracyToGrade(gradeResult.accuracy) : null;
   const showManualGrade = voiceUnavailable || gradeResult !== null;
+
+  // Register grade shortcuts when grade buttons are visible
+  useEffect(() => {
+    if (!showManualGrade) { shortcuts.current.grade = null; return; }
+    shortcuts.current.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
+    return () => { shortcuts.current.grade = null; };
+  }, [showManualGrade, shortcuts, onResult, transcript, gradeResult]);
 
   return (
     <div className="bqt-screen">
@@ -366,9 +550,10 @@ function FinishItDrill({ header, item, vref, onResult }: {
 }
 
 // ── Type-out Drill ─────────────────────────────────────────────────
-function TypeOutDrill({ header, item, vref, onResult }: {
+function TypeOutDrill({ header, item, vref, onResult, shortcuts }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4) => void;
+  shortcuts: ShortcutRef;
 }) {
   const [typed, setTyped] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -380,6 +565,13 @@ function TypeOutDrill({ header, item, vref, onResult }: {
     const result = gradeTypeOut(typed, item.text);
     onResult(result.pass ? 3 : 1);
   };
+
+  // Register grade shortcuts when grade buttons appear after submission
+  useEffect(() => {
+    if (!gradeResult) { shortcuts.current.grade = null; return; }
+    shortcuts.current.grade = (g) => onResult(g);
+    return () => { shortcuts.current.grade = null; };
+  }, [gradeResult, shortcuts, onResult]);
 
   return (
     <div className="bqt-screen">
@@ -448,9 +640,10 @@ function TypeOutDrill({ header, item, vref, onResult }: {
 }
 
 // ── Ref-to-Verse Drill ─────────────────────────────────────────────
-function RefToVerseDrill({ header, item, vref, onResult }: {
+function RefToVerseDrill({ header, item, vref, onResult, shortcuts }: {
   header: React.ReactNode; item: DrillItem; vref: string;
   onResult: (grade: 1|2|3|4, transcript?: string, accuracy?: number) => void;
+  shortcuts: ShortcutRef;
 }) {
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -467,6 +660,20 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
     if (!isSupported) { setRevealed(true); return; }
     startListening();
   };
+
+  // Reveal shortcut available before the answer is shown
+  useEffect(() => {
+    if (revealed) { shortcuts.current.reveal = null; return; }
+    shortcuts.current.reveal = () => setRevealed(true);
+    return () => { shortcuts.current.reveal = null; };
+  }, [revealed, shortcuts]);
+
+  // Grade shortcuts available after reveal
+  useEffect(() => {
+    if (!revealed) { shortcuts.current.grade = null; return; }
+    shortcuts.current.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
+    return () => { shortcuts.current.grade = null; };
+  }, [revealed, shortcuts, onResult, transcript, gradeResult]);
 
   return (
     <div className="bqt-screen">

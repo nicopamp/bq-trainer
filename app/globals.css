@@ -203,6 +203,23 @@ html, body {
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 
+/* ── Drill wide-layout helpers (mobile defaults) ──────────────────── */
+.drill-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.drill-sidebar { display: none; }
+
+.drill-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* ── Home wide-layout helpers (mobile defaults) ───────────────────── */
 .home-layout {
   flex: 1;
@@ -276,4 +293,24 @@ html, body {
   /* Heatmap: 60 columns on wide, wider chapter label */
   .hm-row { grid-template-columns: 70px 1fr 38px; }
   .hm-grid { grid-template-columns: repeat(60, 1fr); }
+
+  /* Drill: two-pane row layout */
+  .drill-wrapper { flex-direction: row; }
+
+  .drill-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: min(280px, 25vw);
+    flex-shrink: 0;
+    background: var(--ink);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    color: #fff;
+  }
+
+  /* Drill content fills remaining width (opt out of 600px centering) */
+  .drill-main > .bqt-screen { max-width: none; margin: 0; }
+
+  /* Mobile header hidden on wide — sidebar provides session nav */
+  .drill-header { display: none; }
 }

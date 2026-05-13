@@ -5,6 +5,7 @@ import type { VerseState } from "./types";
 
 export interface VerseRef {
   id: number;
+  book: string;
   chapter: number;
   verse: number;
   text: string;
@@ -56,7 +57,7 @@ export async function getDueVerses(
   if (verseId) {
     query = supabase
       .from("user_verses")
-      .select("verse_id, state, due_at, verses(id, chapter, verse, text)")
+      .select("verse_id, state, due_at, verses(id, book, chapter, verse, text)")
       .eq("user_id", userId)
       .eq("verse_id", verseId)
       .in("state", ["review", "mastered", "learning"])
@@ -64,7 +65,7 @@ export async function getDueVerses(
   } else if (chapter) {
     query = supabase
       .from("user_verses")
-      .select("verse_id, state, due_at, verses!inner(id, chapter, verse, text)")
+      .select("verse_id, state, due_at, verses!inner(id, book, chapter, verse, text)")
       .eq("user_id", userId)
       .in("state", ["review", "mastered", "learning"])
       .lte("due_at", dueCutoff)
@@ -74,7 +75,7 @@ export async function getDueVerses(
   } else {
     query = supabase
       .from("user_verses")
-      .select("verse_id, state, due_at, verses(id, chapter, verse, text)")
+      .select("verse_id, state, due_at, verses(id, book, chapter, verse, text)")
       .eq("user_id", userId)
       .in("state", ["review", "mastered", "learning"])
       .lte("due_at", dueCutoff)

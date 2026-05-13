@@ -64,6 +64,7 @@ export default async function DrillPage({
     const v = extractVerse(uv.verses);
     return {
       verseId: uv.verse_id,
+      book: v?.book ?? "Acts",
       chapter: v?.chapter ?? 0,
       verseNum: v?.verse ?? 0,
       text: v?.text ?? "",

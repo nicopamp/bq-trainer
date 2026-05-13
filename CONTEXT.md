@@ -4,6 +4,20 @@ A spaced-repetition training app for Bible Quiz (BQ) competition. Competitors mu
 
 ## Language
 
+### Competition categories
+
+**TBQ (Teen Bible Quiz)**:
+The competition category for quizzers aged 12 and older who remain unmarried. The primary category this app is built for.
+_Avoid_: teen quiz, junior quiz
+
+**EABQ (English Adult Bible Quiz)**:
+The competition category for quizzers aged 19 and older. English-language only. Shares the same rulebook and question formats as TBQ.
+_Avoid_: adult quiz, senior quiz
+
+**ABQ (Adult Bible Quiz)**:
+The Spanish-language adult competition category. Out of scope for this app — no Spanish translation is planned.
+_Avoid_: (do not conflate with EABQ)
+
 ### Competition concepts
 
 **Quotation Question**:

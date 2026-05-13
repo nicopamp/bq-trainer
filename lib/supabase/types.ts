@@ -60,6 +60,16 @@ export interface Event {
   created_at: string;
 }
 
+export interface Profile {
+  id: number;
+  user_id: string;
+  full_name: string;
+  quiz_category: "TBQ" | "EABQ";
+  church: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Joined type returned by home/chapter queries
 export interface VerseWithState extends Verse {
   state: VerseState;

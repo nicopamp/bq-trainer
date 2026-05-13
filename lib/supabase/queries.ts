@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { VerseState } from "./types";
+import type { Profile, VerseState } from "./types";
 
 // ── Shared types ───────────────────────────────────────────────────
 
@@ -182,6 +182,19 @@ export async function getStreak(
     .eq("user_id", userId)
     .single();
   return data ?? null;
+}
+
+/** Fetch the user's profile, or null if not yet created. */
+export async function getProfile(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Profile | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, user_id, full_name, quiz_category, church, created_at, updated_at")
+    .eq("user_id", userId)
+    .single();
+  return (data as Profile) ?? null;
 }
 
 /** Fetch reviews from the past 7 days. */

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getDaysUntil } from "@/lib/events";
+import { getDaysUntil, isEventUpcoming } from "@/lib/events";
 import type { Event } from "@/lib/supabase/types";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -40,5 +40,30 @@ describe("getDaysUntil", () => {
   it("handles cross-month boundaries", () => {
     vi.setSystemTime(new Date("2026-05-28"));
     expect(getDaysUntil(makeEvent({ date: "2026-06-03" }))).toBe(6);
+  });
+});
+
+describe("isEventUpcoming", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("returns true for an event exactly 60 days away", () => {
+    vi.setSystemTime(new Date("2026-05-13"));
+    expect(isEventUpcoming(makeEvent({ date: "2026-07-12" }))).toBe(true);
+  });
+
+  it("returns false for an event 61 days away", () => {
+    vi.setSystemTime(new Date("2026-05-13"));
+    expect(isEventUpcoming(makeEvent({ date: "2026-07-13" }))).toBe(false);
+  });
+
+  it("returns true for an event today (0 days)", () => {
+    vi.setSystemTime(new Date("2026-06-01"));
+    expect(isEventUpcoming(makeEvent({ date: "2026-06-01" }))).toBe(true);
+  });
+
+  it("returns false for a past event", () => {
+    vi.setSystemTime(new Date("2026-06-05"));
+    expect(isEventUpcoming(makeEvent({ date: "2026-06-01" }))).toBe(false);
   });
 });

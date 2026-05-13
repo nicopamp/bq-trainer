@@ -8,6 +8,7 @@ import { HMCell } from "@/components/ui/HMCell";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { VerseState } from "@/lib/supabase/types";
 import { getUserVerseStates, getStreak, getWeeklyReviews, extractVerse } from "@/lib/supabase/queries";
+import { getNextEvent, getReadinessSummary, getDaysUntil, isEventUpcoming } from "@/lib/events";
 
 const CHAPTER_COUNTS: Record<number, number> = {
   1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
@@ -22,11 +23,17 @@ export default async function HomePage() {
   // Initialize user_verses rows on first visit (idempotent — safe to call every load)
   await supabase.rpc("ensure_user_verses", { p_user_id: user.id });
 
-  const [userVerses, streak, weekReviews] = await Promise.all([
+  const [userVerses, streak, weekReviews, nextEvent] = await Promise.all([
     getUserVerseStates(supabase, user.id),
     getStreak(supabase, user.id),
     getWeeklyReviews(supabase, user.id),
+    getNextEvent(supabase, user.id),
   ]);
+
+  const upcomingEvent = nextEvent && isEventUpcoming(nextEvent) ? nextEvent : null;
+  const readiness = upcomingEvent
+    ? await getReadinessSummary(supabase, user.id, upcomingEvent)
+    : null;
 
   // Build chapter → verse → state map
   type VerseMap = Record<number, Record<number, VerseState>>;
@@ -81,11 +88,19 @@ export default async function HomePage() {
             Bible Quiz Trainer
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px 4px 8px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 999 }}>
-          <Icon name="flame" size={14} color="var(--rust-500)" />
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{streak?.current_days ?? 0}</span>
-          <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>days</span>
-        </div>
+        {upcomingEvent ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px 4px 8px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 999 }}>
+            <Icon name="calendar" size={14} color="var(--saffron-500)" />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{getDaysUntil(upcomingEvent)} days</span>
+            <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>· {upcomingEvent.name}</span>
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px 4px 8px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 999 }}>
+            <Icon name="flame" size={14} color="var(--rust-500)" />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{streak?.current_days ?? 0}</span>
+            <span style={{ fontSize: 12, color: "var(--ink-muted)" }}>days</span>
+          </div>
+        )}
       </div>
 
       <div className="screen-scroll" style={{ padding: "0 22px 22px", position: "relative", zIndex: 1 }}>
@@ -146,6 +161,28 @@ export default async function HomePage() {
                 <div style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 2 }}>~2 min · 5 steps</div>
               </div>
               <Icon name="chevron-right" size={18} color="var(--ink-muted)" />
+            </Link>
+          </div>
+        )}
+
+        {/* readiness card — only when event is within 60 days */}
+        {upcomingEvent && readiness && (
+          <div className="card" style={{ padding: 18, marginBottom: 22 }}>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Next event</div>
+            <div className="t-display" style={{ fontSize: 20, lineHeight: 1.1, marginBottom: 2 }}>{upcomingEvent.name}</div>
+            <div style={{ fontSize: 13, color: "var(--ink-muted)", marginBottom: 14 }}>
+              {new Date(upcomingEvent.date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              {" · "}Ch. 1–{upcomingEvent.end_chapter}
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-muted)", marginBottom: 6 }}>
+                <span>{readiness.mastered} of {readiness.inScope} verses ready</span>
+                <span className="t-mono">{readiness.inScope > 0 ? Math.round((readiness.mastered / readiness.inScope) * 100) : 0}%</span>
+              </div>
+              <ProgressBar value={readiness.inScope > 0 ? readiness.mastered / readiness.inScope : 0} />
+            </div>
+            <Link href={`/drill?chapter=${upcomingEvent.end_chapter}`} className="btn btn-saffron" style={{ marginTop: 14, display: "flex", width: "100%" }}>
+              Drill for next event <Icon name="chevron-right" size={16} color="#fff" />
             </Link>
           </div>
         )}

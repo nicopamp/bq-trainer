@@ -13,6 +13,13 @@ export function getDaysUntil(event: Event): number {
   return Math.round((eventMs - todayMs) / MS_PER_DAY);
 }
 
+export const EVENT_COUNTDOWN_THRESHOLD = 60;
+
+export function isEventUpcoming(event: Event): boolean {
+  const days = getDaysUntil(event);
+  return days >= 0 && days <= EVENT_COUNTDOWN_THRESHOLD;
+}
+
 // ── Queries ───────────────────────────────────────────────────────
 
 export async function getNextEvent(

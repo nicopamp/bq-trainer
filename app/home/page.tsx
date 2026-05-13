@@ -7,13 +7,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { HMCell } from "@/components/ui/HMCell";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { VerseState } from "@/lib/supabase/types";
-import { getUserVerseStates, getStreak, getWeeklyReviews, extractVerse } from "@/lib/supabase/queries";
+import { getUserVerseStates, getStreak, getWeeklyReviews, getActiveBook, getBookChapterCounts, extractVerse } from "@/lib/supabase/queries";
 import { getNextEvent, getReadinessSummary, getDaysUntil, isEventUpcoming } from "@/lib/events";
-
-const CHAPTER_COUNTS: Record<number, number> = {
-  1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
-};
-const TOTAL_VERSES = Object.values(CHAPTER_COUNTS).reduce((a, b) => a + b, 0);
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -23,12 +18,18 @@ export default async function HomePage() {
   // Initialize user_verses rows on first visit (idempotent — safe to call every load)
   await supabase.rpc("ensure_user_verses", { p_user_id: user.id });
 
-  const [userVerses, streak, weekReviews, nextEvent] = await Promise.all([
+  const [userVerses, streak, weekReviews, nextEvent, activeBook] = await Promise.all([
     getUserVerseStates(supabase, user.id),
     getStreak(supabase, user.id),
     getWeeklyReviews(supabase, user.id),
     getNextEvent(supabase, user.id),
+    getActiveBook(supabase, user.id),
   ]);
+
+  const CHAPTER_COUNTS = await getBookChapterCounts(supabase, activeBook);
+  const TOTAL_VERSES = Object.values(CHAPTER_COUNTS).reduce((a, b) => a + b, 0);
+  const chapters = Object.keys(CHAPTER_COUNTS).map(Number).sort((a, b) => a - b);
+  const chapterRange = chapters.length > 0 ? `${chapters[0]}–${chapters[chapters.length - 1]}` : "";
 
   const upcomingEvent = nextEvent && isEventUpcoming(nextEvent) ? nextEvent : null;
   const readiness = upcomingEvent
@@ -66,7 +67,7 @@ export default async function HomePage() {
 
   let nextLearnChapter: number | null = null;
   let nextLearnVerse: number | null = null;
-  outer: for (let ch = 1; ch <= 9; ch++) {
+  outer: for (const ch of chapters) {
     for (let v = 1; v <= CHAPTER_COUNTS[ch]; v++) {
       if (!verseMap[ch]?.[v] || verseMap[ch][v] === "new") {
         nextLearnChapter = ch;
@@ -106,9 +107,9 @@ export default async function HomePage() {
       <div className="screen-scroll" style={{ padding: "0 22px 22px", position: "relative", zIndex: 1 }}>
         {/* hero */}
         <div style={{ marginBottom: 18 }}>
-          <div className="eyebrow" style={{ marginBottom: 6 }}>The Acts of the Apostles · KJV</div>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>{activeBook} {chapterRange} · KJV</div>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <h1 className="t-display" style={{ fontSize: 54, lineHeight: 0.95, margin: 0, fontWeight: 400 }}>Acts</h1>
+            <h1 className="t-display" style={{ fontSize: 54, lineHeight: 0.95, margin: 0, fontWeight: 400 }}>{activeBook}</h1>
             <div style={{ textAlign: "right" }}>
               <div className="t-mono" style={{ fontSize: 13, color: "var(--ink-muted)" }}>{masteredCount} / {TOTAL_VERSES}</div>
               <div className="eyebrow" style={{ marginTop: 2 }}>memorized</div>
@@ -153,11 +154,11 @@ export default async function HomePage() {
             <div className="eyebrow" style={{ marginBottom: 10 }}>Up next to learn</div>
             <Link href={`/learn/${nextLearnChapter}/${nextLearnVerse}`} className="card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 14, textDecoration: "none", color: "inherit" }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--saffron-50)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "1px solid var(--saffron-100)", flexShrink: 0 }}>
-                <div className="t-mono" style={{ fontSize: 9, color: "var(--saffron-700)", letterSpacing: "0.08em" }}>ACTS</div>
+                <div className="t-mono" style={{ fontSize: 9, color: "var(--saffron-700)", letterSpacing: "0.08em" }}>{activeBook.toUpperCase()}</div>
                 <div className="t-display" style={{ fontSize: 18, lineHeight: 1, color: "var(--saffron-700)" }}>{nextLearnChapter}:{nextLearnVerse}</div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="t-display-italic" style={{ fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.35 }}>First verse in Acts {nextLearnChapter}</div>
+                <div className="t-display-italic" style={{ fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.35 }}>First verse in {activeBook} {nextLearnChapter}</div>
                 <div style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 2 }}>~2 min · 5 steps</div>
               </div>
               <Icon name="chevron-right" size={18} color="var(--ink-muted)" />
@@ -243,7 +244,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <BottomNav active="home" />
+      <BottomNav active="home" bookName={activeBook} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { DrillClient } from "./DrillClient";
-import { getDueVerses, getNextNewVerse, extractVerse } from "@/lib/supabase/queries";
+import { getDueVerses, getNextNewVerse, getActiveBook, extractVerse } from "@/lib/supabase/queries";
 
 export default async function DrillPage({
   searchParams,
@@ -23,7 +23,10 @@ export default async function DrillPage({
   });
 
   if (dueVerses.length === 0) {
-    const nextNew = await getNextNewVerse(supabase, user.id);
+    const [nextNew, activeBook] = await Promise.all([
+      getNextNewVerse(supabase, user.id),
+      getActiveBook(supabase, user.id),
+    ]);
 
     const forceHref = !isForced
       ? chapter ? `/drill?chapter=${chapter}&force=true` : `/drill?force=true`
@@ -35,7 +38,7 @@ export default async function DrillPage({
         <p className="t-display" style={{ fontSize: 26, textAlign: "center", lineHeight: 1.15 }}>Nothing due right now</p>
         <p style={{ fontSize: 14, color: "var(--ink-muted)", textAlign: "center", lineHeight: 1.5, maxWidth: 300 }}>
           {chapter
-            ? `No reviews are scheduled in Acts ${chapter} for today.`
+            ? `No reviews are scheduled in ${activeBook} ${chapter} for today.`
             : "No reviews are scheduled for today."}
           {" "}Drill sessions appear here once you&apos;ve learned verses.
         </p>
@@ -50,7 +53,7 @@ export default async function DrillPage({
             className="btn btn-saffron btn-lg"
             style={{ marginTop: "var(--s-2)" }}
           >
-            Learn Acts {nextNew.chapter}:{nextNew.verse} →
+            Learn {activeBook} {nextNew.chapter}:{nextNew.verse} →
           </Link>
         ) : null}
         <Link href="/home" className="btn btn-ghost btn-md">

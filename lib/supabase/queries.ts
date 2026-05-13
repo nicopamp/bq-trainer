@@ -123,17 +123,52 @@ export async function getUserVerseStates(
 export async function getChapterVerses(
   supabase: SupabaseClient,
   userId: string,
-  chapter: number
+  chapter: number,
+  book = "Acts"
 ): Promise<ChapterVerseRow[]> {
   const { data } = await supabase
     .from("verses")
     .select("id, verse, text, user_verses(state, learn_step, due_at, stability)")
     .eq("chapter", chapter)
-    .eq("book", "Acts")
+    .eq("book", book)
     .eq("translation", "KJV")
     .eq("user_verses.user_id", userId)
     .order("verse");
   return (data as ChapterVerseRow[]) ?? [];
+}
+
+/** Derive the active book from the user's user_verses rows. */
+export async function getActiveBook(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<string> {
+  const { data } = await supabase
+    .from("user_verses")
+    .select("verses(book)")
+    .eq("user_id", userId)
+    .limit(1)
+    .single();
+  const v = extractVerse((data as any)?.verses);
+  return (v as any)?.book ?? "Acts";
+}
+
+/** Get verse counts per chapter for a book from the DB. */
+export async function getBookChapterCounts(
+  supabase: SupabaseClient,
+  book: string
+): Promise<Record<number, number>> {
+  const { data } = await supabase
+    .from("verses")
+    .select("chapter")
+    .eq("book", book)
+    .eq("translation", "KJV");
+  const counts: Record<number, number> = {};
+  if (data) {
+    for (const row of data) {
+      counts[row.chapter] = (counts[row.chapter] ?? 0) + 1;
+    }
+  }
+  return counts;
 }
 
 /** Fetch the user's streak record. */

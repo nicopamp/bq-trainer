@@ -17,8 +17,7 @@ export default async function LearnPage({
 
   const { data: verse } = await supabase
     .from("verses")
-    .select("id, text, chapter, verse")
-    .eq("book", "Acts")
+    .select("id, book, text, chapter, verse")
     .eq("chapter", ch)
     .eq("verse", v)
     .eq("translation", "KJV")
@@ -48,6 +47,7 @@ export default async function LearnPage({
       verseNum={v}
       text={verse.text}
       initialStep={step as 0 | 1 | 2 | 3 | 4}
+      book={verse.book}
     />
   );
 }

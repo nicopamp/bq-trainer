@@ -3,16 +3,20 @@
 import Link from "next/link";
 import { Icon } from "./Icon";
 
-const NAV_ITEMS = [
-  { key: "home",     href: "/home",     icon: "book",     label: "Acts" },
-  { key: "drill",    href: "/drill",    icon: "spark",    label: "Drill" },
-  { key: "progress", href: "/progress", icon: "waveform", label: "Progress" },
-  { key: "settings", href: "/settings", icon: "tune",     label: "Settings" },
-] as const;
+type NavKey = "home" | "drill" | "progress" | "settings";
 
-interface BottomNavProps { active: typeof NAV_ITEMS[number]["key"]; }
+interface BottomNavProps {
+  active: NavKey;
+  bookName?: string;
+}
 
-export function BottomNav({ active }: BottomNavProps) {
+export function BottomNav({ active, bookName = "Acts" }: BottomNavProps) {
+  const NAV_ITEMS: { key: NavKey; href: string; icon: string; label: string }[] = [
+    { key: "home",     href: "/home",     icon: "book",     label: bookName },
+    { key: "drill",    href: "/drill",    icon: "spark",    label: "Drill" },
+    { key: "progress", href: "/progress", icon: "waveform", label: "Progress" },
+    { key: "settings", href: "/settings", icon: "tune",     label: "Settings" },
+  ];
   return (
     <nav className="bottom-bar" style={{ height: 76, paddingBottom: 18, display: "flex" }}>
       {NAV_ITEMS.map(({ key, href, icon, label }) => {

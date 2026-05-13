@@ -10,9 +10,10 @@ interface LearnStepHeaderProps {
   title: string;
   vref: string;
   backHref: string;
+  book?: string;
 }
 
-export function LearnStepHeader({ step, title, vref, backHref }: LearnStepHeaderProps) {
+export function LearnStepHeader({ step, title, vref, backHref, book = "Acts" }: LearnStepHeaderProps) {
   return (
     <div style={{ padding: "4px 22px 18px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
@@ -35,7 +36,7 @@ export function LearnStepHeader({ step, title, vref, backHref }: LearnStepHeader
         </div>
         <div style={{ textAlign: "right" }}>
           <div className="t-display" style={{ fontSize: 22, lineHeight: 1 }}>{vref}</div>
-          <div className="t-mono" style={{ fontSize: 10, color: "var(--ink-muted)", letterSpacing: "0.05em" }}>ACTS</div>
+          <div className="t-mono" style={{ fontSize: 10, color: "var(--ink-muted)", letterSpacing: "0.05em" }}>{book.toUpperCase()}</div>
         </div>
       </div>
     </div>

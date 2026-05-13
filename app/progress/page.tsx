@@ -3,23 +3,24 @@ import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Icon } from "@/components/ui/Icon";
-import { getUserVerseStates, getStreak, getWeeklyReviews, extractVerse } from "@/lib/supabase/queries";
-
-const CHAPTER_COUNTS: Record<number, number> = {
-  1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
-};
-const TOTAL = Object.values(CHAPTER_COUNTS).reduce((a, b) => a + b, 0);
+import { getUserVerseStates, getStreak, getWeeklyReviews, getActiveBook, getBookChapterCounts, extractVerse } from "@/lib/supabase/queries";
 
 export default async function ProgressPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  const [userVerses, streak, weekReviews] = await Promise.all([
+  const [userVerses, streak, weekReviews, activeBook] = await Promise.all([
     getUserVerseStates(supabase, user.id),
     getStreak(supabase, user.id),
     getWeeklyReviews(supabase, user.id),
+    getActiveBook(supabase, user.id),
   ]);
+
+  const CHAPTER_COUNTS = await getBookChapterCounts(supabase, activeBook);
+  const TOTAL = Object.values(CHAPTER_COUNTS).reduce((a, b) => a + b, 0);
+  const chapters = Object.keys(CHAPTER_COUNTS).map(Number).sort((a, b) => a - b);
+  const chapterRange = chapters.length > 0 ? `${chapters[0]}–${chapters[chapters.length - 1]}` : "";
 
   const masteredCount = userVerses.filter((uv) => uv.state === "mastered").length;
   const reviewCount = userVerses.filter((uv) => uv.state === "review").length;
@@ -32,7 +33,7 @@ export default async function ProgressPage() {
 
   type ChapterStats = { mastered: number; total: number };
   const chapterStats: Record<number, ChapterStats> = {};
-  for (const ch of Object.keys(CHAPTER_COUNTS).map(Number)) {
+  for (const ch of chapters) {
     chapterStats[ch] = { mastered: 0, total: CHAPTER_COUNTS[ch] };
   }
   for (const uv of userVerses) {
@@ -46,7 +47,7 @@ export default async function ProgressPage() {
       <div className="paper-grain" />
 
       <div style={{ padding: "14px 22px 10px", position: "relative", zIndex: 1 }}>
-        <div className="eyebrow" style={{ marginBottom: 4 }}>Acts 1–9 · KJV</div>
+        <div className="eyebrow" style={{ marginBottom: 4 }}>{activeBook} {chapterRange} · KJV</div>
         <div className="t-display" style={{ fontSize: 30, lineHeight: 1 }}>Progress</div>
       </div>
 
@@ -108,7 +109,7 @@ export default async function ProgressPage() {
             {Object.entries(chapterStats).map(([ch, { mastered, total }]) => (
               <div key={ch}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>Acts {ch}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{activeBook} {ch}</span>
                   <span className="t-mono" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{mastered}/{total}</span>
                 </div>
                 <ProgressBar value={mastered / total} height={6} accent={mastered === total ? "var(--leaf-500)" : "var(--saffron-500)"} />

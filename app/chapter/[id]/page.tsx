@@ -4,22 +4,21 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { HMCell } from "@/components/ui/HMCell";
 import type { VerseState } from "@/lib/supabase/types";
-import { getChapterVerses, extractVerse } from "@/lib/supabase/queries";
-
-const CHAPTER_COUNTS: Record<number, number> = {
-  1: 26, 2: 47, 3: 26, 4: 37, 5: 42, 6: 15, 7: 60, 8: 40, 9: 43,
-};
+import { getChapterVerses, getActiveBook, getBookChapterCounts, extractVerse } from "@/lib/supabase/queries";
 
 export default async function ChapterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ch = parseInt(id);
-  if (!CHAPTER_COUNTS[ch]) notFound();
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  const rows = await getChapterVerses(supabase, user.id, ch);
+  const activeBook = await getActiveBook(supabase, user.id);
+  const chapterCounts = await getBookChapterCounts(supabase, activeBook);
+  if (!chapterCounts[ch]) notFound();
+
+  const rows = await getChapterVerses(supabase, user.id, ch, activeBook);
 
   if (rows.length === 0) {
     // Verses not seeded yet — show a helpful message
@@ -63,7 +62,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
           <Icon name="chevron-left" size={22} color="var(--ink)" />
         </Link>
         <div style={{ flex: 1 }}>
-          <div className="eyebrow">Acts · KJV</div>
+          <div className="eyebrow">{activeBook} · KJV</div>
           <div className="t-display" style={{ fontSize: 22, lineHeight: 1 }}>Chapter {ch}</div>
         </div>
       </div>

@@ -16,9 +16,10 @@ interface Props {
   verseNum: number;
   text: string;
   initialStep: 0 | 1 | 2 | 3 | 4;
+  book?: string;
 }
 
-export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep }: Props) {
+export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep, book = "Acts" }: Props) {
   const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(initialStep);
   const [graduated, setGraduated] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,17 +42,17 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep 
   if (graduated) return <GraduateStep vref={vref} chapter={chapter} />;
 
   switch (step) {
-    case 0: return <ReadStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} onNext={() => advance(1)} saving={saving} />;
-    case 1: return <ChunkStep text={text} chunks={chunks} vref={vref} backHref={backHref} onNext={() => advance(2)} saving={saving} />;
-    case 2: return <TraceStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} onNext={() => advance(3)} saving={saving} />;
-    case 3: return <RecallStep text={text} vref={vref} backHref={backHref} onNext={() => advance(5)} saving={saving} />;
+    case 0: return <ReadStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} book={book} onNext={() => advance(1)} saving={saving} />;
+    case 1: return <ChunkStep text={text} chunks={chunks} vref={vref} backHref={backHref} book={book} onNext={() => advance(2)} saving={saving} />;
+    case 2: return <TraceStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} book={book} onNext={() => advance(3)} saving={saving} />;
+    case 3: return <RecallStep text={text} vref={vref} backHref={backHref} book={book} onNext={() => advance(5)} saving={saving} />;
     default: return <GraduateStep vref={vref} chapter={chapter} />;
   }
 }
 
 // ── Step 0: Read ──────────────────────────────────────────────────
-function ReadStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
-  text: string; chapter: number; verseNum: number; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function ReadStep({ text, chapter, verseNum, vref, backHref, book, onNext, saving }: {
+  text: string; chapter: number; verseNum: number; vref: string; backHref: string; book: string; onNext: () => void; saving: boolean;
 }) {
   const [playing, setPlaying] = useState(false);
 
@@ -68,7 +69,7 @@ function ReadStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
   return (
     <div className="bqt-screen">
       <div className="paper-grain" />
-      <LearnStepHeader step={0} title="Meet the verse" vref={vref} backHref={backHref} />
+      <LearnStepHeader step={0} title="Meet the verse" vref={vref} backHref={backHref} book={book} />
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
         <div style={{ position: "relative", padding: "40px 8px 24px" }}>
@@ -78,7 +79,7 @@ function ReadStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
           </div>
           <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ flex: 1, height: 1, background: "var(--hairline)" }} />
-            <div className="t-mono" style={{ fontSize: 11, color: "var(--ink-muted)", letterSpacing: "0.1em" }}>ACTS {vref} · KJV</div>
+            <div className="t-mono" style={{ fontSize: 11, color: "var(--ink-muted)", letterSpacing: "0.1em" }}>{book.toUpperCase()} {vref} · KJV</div>
             <div style={{ flex: 1, height: 1, background: "var(--hairline)" }} />
           </div>
         </div>
@@ -102,8 +103,8 @@ function ReadStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
 }
 
 // ── Step 1: Chunk ─────────────────────────────────────────────────
-function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
-  text: string; chunks: string[]; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function ChunkStep({ text, chunks, vref, backHref, book, onNext, saving }: {
+  text: string; chunks: string[]; vref: string; backHref: string; book: string; onNext: () => void; saving: boolean;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -129,7 +130,7 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
   return (
     <div className="bqt-screen">
       <div className="paper-grain" />
-      <LearnStepHeader step={1} title="Build it phrase by phrase" vref={vref} backHref={backHref} />
+      <LearnStepHeader step={1} title="Build it phrase by phrase" vref={vref} backHref={backHref} book={book} />
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
         <div className="card" style={{ padding: "20px 18px" }}>
@@ -205,8 +206,8 @@ function ChunkStep({ text, chunks, vref, backHref, onNext, saving }: {
 }
 
 // ── Step 2: Trace ─────────────────────────────────────────────────
-function TraceStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: {
-  text: string; chapter: number; verseNum: number; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function TraceStep({ text, chapter, verseNum, vref, backHref, book, onNext, saving }: {
+  text: string; chapter: number; verseNum: number; vref: string; backHref: string; book: string; onNext: () => void; saving: boolean;
 }) {
   const [revealLevel, setRevealLevel] = useState(0); // 0=first-letter, 1=half, 2=full
   const [playing, setPlaying] = useState(false);
@@ -225,7 +226,7 @@ function TraceStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: 
   return (
     <div className="bqt-screen">
       <div className="paper-grain" />
-      <LearnStepHeader step={2} title="Just the first letters" vref={vref} backHref={backHref} />
+      <LearnStepHeader step={2} title="Just the first letters" vref={vref} backHref={backHref} book={book} />
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1 }}>
         <div className="card" style={{ padding: "22px 18px" }}>
@@ -290,8 +291,8 @@ function TraceStep({ text, chapter, verseNum, vref, backHref, onNext, saving }: 
 }
 
 // ── Step 3: Recall ────────────────────────────────────────────────
-function RecallStep({ text, vref, backHref, onNext, saving }: {
-  text: string; vref: string; backHref: string; onNext: () => void; saving: boolean;
+function RecallStep({ text, vref, backHref, book, onNext, saving }: {
+  text: string; vref: string; backHref: string; book: string; onNext: () => void; saving: boolean;
 }) {
   const [passes, setPasses] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -327,7 +328,7 @@ function RecallStep({ text, vref, backHref, onNext, saving }: {
   return (
     <div className="bqt-screen">
       <div className="paper-grain" />
-      <LearnStepHeader step={3} title="From memory — no help" vref={vref} backHref={backHref} />
+      <LearnStepHeader step={3} title="From memory — no help" vref={vref} backHref={backHref} book={book} />
 
       <div className="screen-scroll" style={{ padding: "0 22px", flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
         {/* lined card */}

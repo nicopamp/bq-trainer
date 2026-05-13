@@ -258,12 +258,13 @@ function AudioDrill({ header, item, vref, onResult, shortcuts }: {
 
   // Register grade shortcuts in speak phase when grade buttons are visible
   useEffect(() => {
-    if (phase !== "speak" || !showManualGrade) { shortcuts.current.grade = null; return; }
-    shortcuts.current.grade = (g) => {
+    const sc = shortcuts.current;
+    if (phase !== "speak" || !showManualGrade) { sc.grade = null; return; }
+    sc.grade = (g) => {
       setVoiceGrade(g);
       setPhase("ref");
     };
-    return () => { shortcuts.current.grade = null; };
+    return () => { sc.grade = null; };
   }, [phase, showManualGrade, shortcuts]);
 
   const handleListen = () => {
@@ -476,9 +477,10 @@ function FinishItDrill({ header, item, vref, onResult, shortcuts }: {
 
   // Register grade shortcuts when grade buttons are visible
   useEffect(() => {
-    if (!showManualGrade) { shortcuts.current.grade = null; return; }
-    shortcuts.current.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
-    return () => { shortcuts.current.grade = null; };
+    const sc = shortcuts.current;
+    if (!showManualGrade) { sc.grade = null; return; }
+    sc.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
+    return () => { sc.grade = null; };
   }, [showManualGrade, shortcuts, onResult, transcript, gradeResult]);
 
   return (
@@ -568,9 +570,10 @@ function TypeOutDrill({ header, item, vref, onResult, shortcuts }: {
 
   // Register grade shortcuts when grade buttons appear after submission
   useEffect(() => {
-    if (!gradeResult) { shortcuts.current.grade = null; return; }
-    shortcuts.current.grade = (g) => onResult(g);
-    return () => { shortcuts.current.grade = null; };
+    const sc = shortcuts.current;
+    if (!gradeResult) { sc.grade = null; return; }
+    sc.grade = (g) => onResult(g);
+    return () => { sc.grade = null; };
   }, [gradeResult, shortcuts, onResult]);
 
   return (
@@ -663,16 +666,18 @@ function RefToVerseDrill({ header, item, vref, onResult, shortcuts }: {
 
   // Reveal shortcut available before the answer is shown
   useEffect(() => {
-    if (revealed) { shortcuts.current.reveal = null; return; }
-    shortcuts.current.reveal = () => setRevealed(true);
-    return () => { shortcuts.current.reveal = null; };
+    const sc = shortcuts.current;
+    if (revealed) { sc.reveal = null; return; }
+    sc.reveal = () => setRevealed(true);
+    return () => { sc.reveal = null; };
   }, [revealed, shortcuts]);
 
   // Grade shortcuts available after reveal
   useEffect(() => {
-    if (!revealed) { shortcuts.current.grade = null; return; }
-    shortcuts.current.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
-    return () => { shortcuts.current.grade = null; };
+    const sc = shortcuts.current;
+    if (!revealed) { sc.grade = null; return; }
+    sc.grade = (g) => onResult(g, transcript || undefined, gradeResult?.accuracy ?? undefined);
+    return () => { sc.grade = null; };
   }, [revealed, shortcuts, onResult, transcript, gradeResult]);
 
   return (

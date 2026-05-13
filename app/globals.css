@@ -203,7 +203,77 @@ html, body {
   border-top: 1px solid rgba(255,255,255,0.08);
 }
 
+/* ── Home wide-layout helpers (mobile defaults) ───────────────────── */
+.home-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.home-main {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home-rail { display: none; }
+.home-mobile-only { display: block; }
+.home-wide-only { display: none; }
+
+/* ── Heatmap grid (mobile default: 30 columns) ────────────────────── */
+.hm-row {
+  display: grid;
+  grid-template-columns: 54px 1fr 38px;
+  gap: 10px;
+  align-items: center;
+}
+
+.hm-grid {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  gap: 2px;
+}
+
 /* ── Responsive breakpoints ───────────────────────────────────────── */
 @media (min-width: 768px) {
-  .bqt-screen { max-width: 430px; margin: 0 auto; }
+  /* Non-Home/Drill routes: centered reading column */
+  .bqt-screen { max-width: 600px; margin: 0 auto; }
+
+  /* Home/Drill opt out of the centered column */
+  .bqt-screen--wide { max-width: none; margin: 0; }
+
+  /* Home: two-pane row layout */
+  .home-layout { flex-direction: row; overflow: hidden; }
+
+  /* Left rail */
+  .home-rail {
+    display: flex;
+    flex-direction: column;
+    width: min(280px, 25vw);
+    flex-shrink: 0;
+    background: var(--bg-deep);
+    border-right: 1px solid var(--hairline);
+    overflow: hidden;
+  }
+
+  .home-rail__scroll { flex: 1; overflow-y: auto; }
+
+  /* Show/hide mobile vs wide elements */
+  .home-mobile-header { display: none; }
+  .home-mobile-only { display: none; }
+  .home-wide-only { display: block; }
+  .home-bottom-nav { display: none; }
+
+  /* Two-column CTA + stats card */
+  .home-card-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+
+  /* Heatmap: 60 columns on wide, wider chapter label */
+  .hm-row { grid-template-columns: 70px 1fr 38px; }
+  .hm-grid { grid-template-columns: repeat(60, 1fr); }
 }

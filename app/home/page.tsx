@@ -7,8 +7,9 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { HMCell } from "@/components/ui/HMCell";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { VerseState } from "@/lib/supabase/types";
-import { getUserVerseStates, getStreak, getWeeklyReviews, getActiveBook, getBookChapterCounts, extractVerse } from "@/lib/supabase/queries";
+import { getUserVerseStates, getStreak, getWeeklyReviews, getActiveBook, getBookChapterCounts } from "@/lib/supabase/queries";
 import { getNextEvent, getReadinessSummary, getDaysUntil, isEventUpcoming } from "@/lib/events";
+import { deriveVerseProgress, allocateDrillModes, findNextLearnVerse, calculateRecallRate } from "@/lib/home";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -36,46 +37,13 @@ export default async function HomePage() {
     ? await getReadinessSummary(supabase, user.id, upcomingEvent)
     : null;
 
-  // Build chapter → verse → state map
-  type VerseMap = Record<number, Record<number, VerseState>>;
-  const verseMap: VerseMap = {};
-  const now = new Date();
-  let dueCount = 0;
-  let masteredCount = 0;
-
-  for (const uv of userVerses) {
-    const versesData = extractVerse(uv.verses);
-    const chapter = versesData?.chapter;
-    const verse = versesData?.verse;
-    if (!chapter || !verse) continue;
-    if (!verseMap[chapter]) verseMap[chapter] = {};
-    verseMap[chapter][verse] = uv.state;
-    if (uv.due_at && new Date(uv.due_at) <= now && uv.state !== "new") dueCount++;
-    if (uv.state === "mastered" || uv.state === "review") masteredCount++;
-  }
-
-  const drillModes: [string, number][] = [
-    ["audio", Math.ceil(dueCount * 0.35)],
-    ["finish-it", Math.ceil(dueCount * 0.4)],
-    ["type out", Math.ceil(dueCount * 0.15)],
-    ["ref → verse", Math.ceil(dueCount * 0.1)],
-  ].filter((pair): pair is [string, number] => (pair[1] as number) > 0);
-
+  const { verseMap, dueCount, masteredCount } = deriveVerseProgress(userVerses);
+  const drillModes = allocateDrillModes(dueCount);
+  const recallRate = calculateRecallRate(weekReviews);
+  const nextLearn = findNextLearnVerse(verseMap, CHAPTER_COUNTS);
+  const nextLearnChapter = nextLearn?.chapter ?? null;
+  const nextLearnVerse = nextLearn?.verse ?? null;
   const totalReviews = weekReviews.length;
-  const goodReviews = weekReviews.filter((r) => r.grade >= 3).length;
-  const recallRate = totalReviews > 0 ? Math.round((goodReviews / totalReviews) * 100) : 0;
-
-  let nextLearnChapter: number | null = null;
-  let nextLearnVerse: number | null = null;
-  outer: for (const ch of chapters) {
-    for (let v = 1; v <= CHAPTER_COUNTS[ch]; v++) {
-      if (!verseMap[ch]?.[v] || verseMap[ch][v] === "new") {
-        nextLearnChapter = ch;
-        nextLearnVerse = v;
-        break outer;
-      }
-    }
-  }
 
   return (
     <div className="bqt-screen">

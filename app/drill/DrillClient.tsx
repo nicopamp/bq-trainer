@@ -1,80 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { chunkVerse } from "@/lib/chunking";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
-import { submitReview } from "@/lib/actions";
 import { speakVerse } from "@/lib/tts";
 import { gradeVoice, asrAccuracyToGrade, gradeTypeOut } from "@/lib/grading";
 import type { GradeResult } from "@/lib/grading";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
-import type { DrillMode } from "@/lib/supabase/types";
+import { useDrillSession } from "./useDrillSession";
+import type { DrillItemInput, DrillItem } from "./useDrillSession";
 
-// Shape the server provides — mode is assigned client-side
-export interface DrillItemInput {
-  verseId: number;
-  book: string;
-  chapter: number;
-  verseNum: string | number;
-  text: string;
-  state: string;
-}
-
-interface DrillItem extends DrillItemInput {
-  mode: Mode;
-}
+export type { DrillItemInput };
 
 interface Props { items: DrillItemInput[]; }
 
-type Mode = "audio" | "finish_it" | "type_out" | "ref_to_verse";
-
-function getModeRotation(order: string): Mode[] {
-  if (order === "audio")    return ["audio", "ref_to_verse", "finish_it", "type_out"];
-  if (order === "type_out") return ["type_out", "finish_it", "ref_to_verse", "audio"];
-  return ["audio", "finish_it", "type_out", "ref_to_verse"];
-}
-
 export function DrillClient({ items }: Props) {
-  const [idx, setIdx] = useState(0);
-  const [done, setDone] = useState(false);
-  const [results, setResults] = useState<{ grade: number; mode: string }[]>([]);
   const router = useRouter();
+  const session = useDrillSession(items);
 
-  const [orderedItems] = useState<DrillItem[]>(() => {
-    const order = localStorage.getItem("bqt_drill_order") ?? "mixed";
-    const rotation = getModeRotation(order);
-    return items.map((item, i) => ({ ...item, mode: rotation[i % rotation.length] }));
-  });
-
-  const current = orderedItems[idx];
-
-  const handleResult = useCallback(async (grade: 1 | 2 | 3 | 4, transcript?: string, accuracy?: number) => {
-    const start = Date.now();
-    setResults((r) => [...r, { grade, mode: current.mode }]);
-
-    await submitReview({
-      verseId: current.verseId,
-      drillMode: current.mode as DrillMode,
-      grade,
-      durationMs: Date.now() - start,
-      transcript,
-      accuracy,
-    });
-
-    if (idx + 1 >= orderedItems.length) {
-      setDone(true);
-    } else {
-      setIdx(idx + 1);
-    }
-  }, [current, idx, orderedItems.length]);
-
-  if (done) {
-    return <SessionComplete results={results} total={orderedItems.length} onBack={() => router.push("/home")} />;
+  if (session.done) {
+    return <SessionComplete results={session.results} total={session.total} onBack={() => router.push("/home")} />;
   }
 
-  const vref = `${current.chapter}:${current.verseNum}`;
-  const progress = idx / orderedItems.length;
+  const { current, idx, total, progress, vref, handleResult } = session;
 
   const DrillHeader = () => (
     <div style={{ padding: "4px 22px 14px" }}>
@@ -85,7 +34,7 @@ export function DrillClient({ items }: Props) {
         <div style={{ flex: 1, height: 4, borderRadius: 2, background: "var(--bg-deep)", overflow: "hidden" }}>
           <div style={{ width: `${progress * 100}%`, height: "100%", background: "var(--saffron-500)", borderRadius: 2, transition: "width 200ms" }} />
         </div>
-        <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{idx + 1} / {orderedItems.length}</div>
+        <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{idx + 1} / {total}</div>
       </div>
     </div>
   );

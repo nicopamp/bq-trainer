@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Event } from "./supabase/types";
+import type { Event, VerseState } from "./supabase/types";
+
+/** Whether a verse counts toward readiness (mastered or in active review). */
+export function isVerseReady(state: VerseState): boolean {
+  return state === "review" || state === "mastered";
+}
 
 // ── Pure helpers ──────────────────────────────────────────────────
 
@@ -59,9 +64,7 @@ export async function getReadinessSummary(
   }
 
   const inScope = verses.length;
-  const mastered = verses.filter(
-    (v: any) => v.state === "review" || v.state === "mastered"
-  ).length;
+  const mastered = verses.filter((v: any) => isVerseReady(v.state as VerseState)).length;
 
   return { inScope, mastered };
 }

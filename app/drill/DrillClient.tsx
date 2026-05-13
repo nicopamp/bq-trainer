@@ -531,7 +531,7 @@ function RefToVerseDrill({ header, item, vref, onResult }: {
 
       <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", padding: "40px 0" }}>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Acts</div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>{item.book}</div>
           <div className="t-display" style={{ fontSize: 72, lineHeight: 1, color: "var(--ink)" }}>{vref}</div>
           <div className="t-mono" style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 8 }}>KJV</div>
         </div>

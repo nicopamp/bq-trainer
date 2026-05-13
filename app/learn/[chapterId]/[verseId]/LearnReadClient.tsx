@@ -39,14 +39,14 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep,
     }
   }, [verseId]);
 
-  if (graduated) return <GraduateStep vref={vref} chapter={chapter} />;
+  if (graduated) return <GraduateStep vref={vref} chapter={chapter} book={book} />;
 
   switch (step) {
     case 0: return <ReadStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} book={book} onNext={() => advance(1)} saving={saving} />;
     case 1: return <ChunkStep text={text} chunks={chunks} vref={vref} backHref={backHref} book={book} onNext={() => advance(2)} saving={saving} />;
     case 2: return <TraceStep text={text} chapter={chapter} verseNum={verseNum} vref={vref} backHref={backHref} book={book} onNext={() => advance(3)} saving={saving} />;
     case 3: return <RecallStep text={text} vref={vref} backHref={backHref} book={book} onNext={() => advance(5)} saving={saving} />;
-    default: return <GraduateStep vref={vref} chapter={chapter} />;
+    default: return <GraduateStep vref={vref} chapter={chapter} book={book} />;
   }
 }
 
@@ -411,7 +411,7 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
 }
 
 // ── Step 4: Graduate ──────────────────────────────────────────────
-function GraduateStep({ vref, chapter }: { vref: string; chapter: number }) {
+function GraduateStep({ vref, chapter, book }: { vref: string; chapter: number; book: string }) {
   const router = useRouter();
 
   return (
@@ -451,7 +451,7 @@ function GraduateStep({ vref, chapter }: { vref: string; chapter: number }) {
         <div style={{ textAlign: "center", marginTop: 12 }}>
           <div className="t-display" style={{ fontSize: 28, lineHeight: 1.15, fontWeight: 500 }}>It&apos;s in your bones.</div>
           <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 8, maxWidth: 290, marginLeft: "auto", marginRight: "auto", lineHeight: 1.4 }}>
-            Acts {vref} joins your review pool. You&apos;ll see it again at the right moments.
+            {book} {vref} joins your review pool. You&apos;ll see it again at the right moments.
           </div>
         </div>
 

@@ -24,6 +24,13 @@ export interface DrillSessionResult {
   mode: string;
 }
 
+export interface ModeProgress {
+  mode: Mode;
+  total: number;
+  completed: number;
+  status: "done" | "active" | "queued";
+}
+
 export interface DrillSession {
   current: DrillItem;
   idx: number;
@@ -32,6 +39,7 @@ export interface DrillSession {
   vref: string;
   results: DrillSessionResult[];
   done: boolean;
+  modeProgress: ModeProgress[];
   handleResult: (grade: 1 | 2 | 3 | 4, transcript?: string, accuracy?: number) => Promise<void>;
 }
 
@@ -72,6 +80,22 @@ export function useDrillSession(items: DrillItemInput[]): DrillSession {
     }
   }, [current, idx, orderedItems.length]);
 
+  // Derive per-mode progress in first-appearance order
+  const seenModes: Mode[] = [];
+  for (const item of orderedItems) {
+    if (!seenModes.includes(item.mode)) seenModes.push(item.mode);
+  }
+  const currentMode = done ? undefined : orderedItems[idx]?.mode;
+  const modeProgress: ModeProgress[] = seenModes.map(mode => {
+    const total = orderedItems.filter(i => i.mode === mode).length;
+    const completed = results.filter(r => r.mode === mode).length;
+    const status: "done" | "active" | "queued" =
+      completed === total ? "done" :
+      mode === currentMode ? "active" :
+      "queued";
+    return { mode, total, completed, status };
+  });
+
   return {
     current,
     idx,
@@ -80,6 +104,7 @@ export function useDrillSession(items: DrillItemInput[]): DrillSession {
     vref: `${current.chapter}:${current.verseNum}`,
     results,
     done,
+    modeProgress,
     handleResult,
   };
 }

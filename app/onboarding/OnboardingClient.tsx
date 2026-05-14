@@ -54,7 +54,7 @@ export function OnboardingClient({
   const isNewUser = initialProfile === null;
 
   // Initialise only from server-provided data so SSR and first client render match
-  const [step, setStep] = useState(isNewUser ? 0 : PROFILE_STEP);
+  const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState(initialProfile?.full_name ?? "");
   const [quizCategory, setQuizCategory] = useState<"TBQ" | "EABQ" | "">(
     initialProfile?.quiz_category ?? ""

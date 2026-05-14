@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { chunkVerse } from "@/lib/chunking";
 import { Icon } from "@/components/ui/Icon";
-import { speakVerse } from "@/lib/tts";
+import { speakText } from "@/lib/tts";
 import { useVoiceGrading } from "@/lib/useVoiceGrading";
 import type { DrillModeProps } from "../drillTypes";
 
@@ -14,8 +13,8 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
   const [refInput, setRefInput] = useState("");
   const [refRevealed, setRefRevealed] = useState(false);
 
-  const openingChunk = chunkVerse(item.text)[0];
-  const remainder = item.text.slice(openingChunk.length).trim();
+  const cueText = item.cueText;
+  const remainder = item.text.slice(cueText.length).trim();
   const fullVref = `${item.book} ${vref}`;
 
   const [choices] = useState<string[]>(() => {
@@ -64,12 +63,12 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
           <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: "var(--r-xl)", padding: 24, marginBottom: 18 }}>
             <button
               style={{ width: 64, height: 64, borderRadius: 32, background: "var(--saffron-500)", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer", boxShadow: "0 8px 24px rgba(201,132,44,.4)" }}
-              onClick={() => speakVerse(item.chapter, Number(item.verseNum), openingChunk)}
+              onClick={() => speakText(cueText)}
             >
               <Icon name="play" size={26} color="#fff" />
             </button>
             <div style={{ marginTop: 12, fontSize: 13, color: "rgba(255,255,255,.55)" }}>Tap to hear the opening words</div>
-            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={() => speakVerse(item.chapter, Number(item.verseNum), openingChunk)}>
+            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={() => speakText(cueText)}>
               <Icon name="rewind" size={14} color="#fff" />
               Replay
             </button>
@@ -97,8 +96,8 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
         <div className="screen-scroll" style={{ padding: "0 22px", position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column" }}>
           <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: "var(--r-xl)", padding: 20, marginBottom: 14 }}>
             <div className="eyebrow" style={{ color: "rgba(255,255,255,.4)", marginBottom: 6, fontSize: 10 }}>opening words</div>
-            <div className="t-display-italic" style={{ fontSize: 18, color: "rgba(255,255,255,.8)", lineHeight: 1.4 }}>&ldquo;{openingChunk}&rdquo;</div>
-            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={() => speakVerse(item.chapter, Number(item.verseNum), openingChunk)}>
+            <div className="t-display-italic" style={{ fontSize: 18, color: "rgba(255,255,255,.8)", lineHeight: 1.4 }}>&ldquo;{cueText}&rdquo;</div>
+            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={() => speakText(cueText)}>
               <Icon name="rewind" size={14} color="#fff" />
               Replay
             </button>

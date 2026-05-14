@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { DrillClient } from "./DrillClient";
-import { getDueVerses, getNextNewVerse, getActiveBook, extractVerse } from "@/lib/supabase/queries";
+import { getDueVerses, getNextNewVerse, getActiveBook, getVersesForChapters, extractVerse } from "@/lib/supabase/queries";
+import { computeVerseCues } from "@/lib/verseCue";
 
 export default async function DrillPage({
   searchParams,
@@ -63,15 +64,33 @@ export default async function DrillPage({
     );
   }
 
+  const chapters = [...new Set(
+    dueVerses.map((uv) => extractVerse(uv.verses)?.chapter).filter((c): c is number => c !== undefined)
+  )];
+  const book = extractVerse(dueVerses[0]?.verses)?.book ?? "Acts";
+  const chapterVerses = await getVersesForChapters(supabase, chapters, book);
+
+  // Group by chapter and compute cue texts
+  const cueMap: Record<number, string> = {};
+  const byChapter: Record<number, typeof chapterVerses> = {};
+  for (const cv of chapterVerses) {
+    (byChapter[cv.chapter] ??= []).push(cv);
+  }
+  for (const ch of Object.values(byChapter)) {
+    Object.assign(cueMap, computeVerseCues(ch));
+  }
+
   const drillItems = dueVerses.map((uv) => {
     const v = extractVerse(uv.verses);
+    const text = v?.text ?? "";
     return {
       verseId: uv.verse_id,
       book: v?.book ?? "Acts",
       chapter: v?.chapter ?? 0,
       verseNum: v?.verse ?? 0,
-      text: v?.text ?? "",
+      text,
       state: uv.state,
+      cueText: cueMap[uv.verse_id] ?? text.split(/\s+/)[0] ?? text,
     };
   });
 

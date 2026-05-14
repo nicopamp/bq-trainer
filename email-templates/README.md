@@ -45,4 +45,4 @@ All `localStorage` keys used by the app are collected here to avoid collisions:
 |-----|---------|---------|
 | `bqt_daily_goal` | Settings | User's daily review goal |
 | `bqt_drill_order` | Settings | Preferred drill mode order |
-| `bqt_optimistic_states` | HeatmapRows, LearnReadClient | Optimistic verse-state patch applied before server data arrives on the home page |
+| `bqt_optimistic_states:{userId}` | HeatmapRows, LearnReadClient | Optimistic verse-state patch applied before server data arrives on the home page; namespaced by Supabase user ID to prevent cross-account leakage on shared devices |

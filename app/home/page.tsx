@@ -323,7 +323,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <HeatmapRows serverVerseMap={verseMap} chapterCounts={CHAPTER_COUNTS} />
+              <HeatmapRows serverVerseMap={verseMap} chapterCounts={CHAPTER_COUNTS} userId={user.id} />
             </div>
 
             {/* stats strip — mobile only */}

@@ -54,6 +54,7 @@ export default async function LearnPage({
       initialStep={step as 0 | 1 | 2 | 3 | 4}
       book={verse.book}
       backHref={backHref}
+      userId={user.id}
     />
   );
 }

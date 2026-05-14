@@ -6,20 +6,22 @@ import { HMCell } from "./HMCell";
 import type { VerseState } from "@/lib/supabase/types";
 import type { VerseStateMap } from "@/lib/home";
 
-const OPTIMISTIC_KEY = "bqt_optimistic_states";
+const optimisticKey = (userId: string) => `bqt_optimistic_states:${userId}`;
 
 interface Props {
   serverVerseMap: VerseStateMap;
   chapterCounts: Record<number, number>;
+  userId: string;
 }
 
-export function HeatmapRows({ serverVerseMap, chapterCounts }: Props) {
+export function HeatmapRows({ serverVerseMap, chapterCounts, userId }: Props) {
   const [verseMap, setVerseMap] = useState<VerseStateMap>(serverVerseMap);
 
   useEffect(() => {
+    const KEY = optimisticKey(userId);
     let stored: Record<string, VerseState> = {};
     try {
-      stored = JSON.parse(localStorage.getItem(OPTIMISTIC_KEY) || "{}");
+      stored = JSON.parse(localStorage.getItem(KEY) || "{}");
     } catch {}
 
     if (Object.keys(stored).length === 0) return;
@@ -49,11 +51,11 @@ export function HeatmapRows({ serverVerseMap, chapterCounts }: Props) {
     if (toRemove.length > 0) {
       const remaining = { ...stored };
       for (const k of toRemove) delete remaining[k];
-      localStorage.setItem(OPTIMISTIC_KEY, JSON.stringify(remaining));
+      localStorage.setItem(KEY, JSON.stringify(remaining));
     }
 
     setVerseMap(merged);
-  }, [serverVerseMap]);
+  }, [serverVerseMap, userId]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

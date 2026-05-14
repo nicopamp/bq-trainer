@@ -18,9 +18,10 @@ interface Props {
   initialStep: 0 | 1 | 2 | 3 | 4;
   book?: string;
   backHref?: string;
+  userId: string;
 }
 
-export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep, book = "Acts", backHref = `/chapter/${chapter}` }: Props) {
+export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep, book = "Acts", backHref = `/chapter/${chapter}`, userId }: Props) {
   const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(initialStep);
   const [graduated, setGraduated] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -35,15 +36,16 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep,
     if (nextStep >= 5) {
       // Write optimistic state so the heatmap reflects "review" immediately on return to /home
       try {
-        const stored = JSON.parse(localStorage.getItem("bqt_optimistic_states") || "{}");
+        const key = `bqt_optimistic_states:${userId}`;
+        const stored = JSON.parse(localStorage.getItem(key) || "{}");
         stored[`${chapter}:${verseNum}`] = "review";
-        localStorage.setItem("bqt_optimistic_states", JSON.stringify(stored));
+        localStorage.setItem(key, JSON.stringify(stored));
       } catch {}
       setGraduated(true);
     } else {
       setStep(nextStep as 0 | 1 | 2 | 3 | 4);
     }
-  }, [verseId, chapter, verseNum]);
+  }, [verseId, chapter, verseNum, userId]);
 
   if (graduated) return <GraduateStep vref={vref} chapter={chapter} book={book} />;
 

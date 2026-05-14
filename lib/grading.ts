@@ -45,7 +45,7 @@ export const ASR_PASS_THRESHOLD = 0.75;
  * saith, etc.) are reliably misheard by ASR even when spoken correctly.
  * Proper noun exclusion + fuzzy matching absorb most errors; 0.90 absorbs the rest.
  */
-export const RECALL_THRESHOLDS = [0.80, 0.90, 0.90] as const;
+export const RECALL_THRESHOLDS = [0.80, 0.85, 0.90] as const;
 
 export interface GradeResult {
   pass: boolean;

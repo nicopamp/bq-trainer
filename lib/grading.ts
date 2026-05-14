@@ -39,6 +39,9 @@ export function asrAccuracyToGrade(accuracy: number): 1 | 2 | 3 | 4 {
 /** Minimum word-overlap fraction for a Recall step pass. */
 export const ASR_PASS_THRESHOLD = 0.75;
 
+/** Per-pass accuracy thresholds for the Learn Flow Recall step (0-indexed). */
+export const RECALL_THRESHOLDS = [0.80, 0.90, 0.95] as const;
+
 export interface GradeResult {
   pass: boolean;
   accuracy: number;
@@ -65,4 +68,33 @@ export function gradeTypeOut(input: string, target: string): GradeResult {
 export function gradeVoice(transcript: string, target: string): GradeResult {
   const accuracy = calculateWordOverlap(transcript, target);
   return { pass: accuracy >= ASR_PASS_THRESHOLD, accuracy, wordResults: [] };
+}
+
+export interface RecallPassResult {
+  pass: boolean;
+  accuracy: number;
+  wordResults: Array<{ word: string; hit: boolean }>;
+}
+
+/**
+ * Grade a single Recall step pass using bag-of-words normalization.
+ * passIndex is 0-based; threshold comes from RECALL_THRESHOLDS[passIndex].
+ */
+export function gradeRecallPass(transcript: string, target: string, passIndex: number): RecallPassResult {
+  const targetWords = normalizeWords(target);
+  if (targetWords.length === 0) return { pass: true, accuracy: 1, wordResults: [] };
+  const saidWords = normalizeWords(transcript);
+  const saidCounts = new Map<string, number>();
+  for (const w of saidWords) saidCounts.set(w, (saidCounts.get(w) ?? 0) + 1);
+  const wordResults = targetWords.map((word) => {
+    const count = saidCounts.get(word) ?? 0;
+    if (count > 0) {
+      saidCounts.set(word, count - 1);
+      return { word, hit: true };
+    }
+    return { word, hit: false };
+  });
+  const accuracy = wordResults.filter((r) => r.hit).length / targetWords.length;
+  const threshold = RECALL_THRESHOLDS[passIndex] ?? RECALL_THRESHOLDS[RECALL_THRESHOLDS.length - 1];
+  return { pass: accuracy >= threshold, accuracy, wordResults };
 }

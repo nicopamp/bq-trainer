@@ -110,6 +110,8 @@ function MagicLinkForm() {
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <input
         type="email"
+        name="email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="your@email.com"
@@ -206,6 +208,8 @@ function PasswordForm() {
         </p>
         <input
           type="email"
+          name="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
@@ -230,6 +234,8 @@ function PasswordForm() {
       <div className="eyebrow" style={{ textAlign: "center" }}>Sign in with email & password</div>
       <input
         type="email"
+        name="email"
+        autoComplete="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="your@email.com"
@@ -238,6 +244,8 @@ function PasswordForm() {
       />
       <input
         type="password"
+        name="password"
+        autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"

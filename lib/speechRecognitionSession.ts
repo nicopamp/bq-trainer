@@ -28,6 +28,7 @@ export function createSRSession(
 ): SRSession {
   let rec: any = null;
   let finalText = "";
+  let active = false; // true only between rec.start() and onend/onerror firing
 
   function ensureRec() {
     if (rec) return rec;
@@ -48,12 +49,14 @@ export function createSRSession(
     };
 
     rec.onend = () => {
+      active = false;
       const text = finalText;
       finalText = "";
       callbacks.onEnd(text);
     };
 
     rec.onerror = () => {
+      active = false;
       callbacks.onError();
     };
 
@@ -64,13 +67,18 @@ export function createSRSession(
     start() {
       const r = ensureRec();
       finalText = "";
+      active = true;
       r.start();
     },
+    // Called by the user tapping stop — processes remaining audio via stop().
     stop() {
-      rec?.stop();
+      if (active) rec?.stop();
     },
+    // Called on unmount — abort() releases the mic immediately without processing
+    // remaining audio. Guard with active so we don't call abort() on an already-ended
+    // instance, which would re-activate it in some browsers (Safari).
     destroy() {
-      rec?.stop();
+      if (active) rec?.abort();
       rec = null;
     },
   };

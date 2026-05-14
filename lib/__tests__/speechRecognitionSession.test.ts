@@ -14,6 +14,7 @@ function makeMockSR() {
     lang = "";
     start = vi.fn();
     stop = vi.fn();
+    abort = vi.fn();
 
     constructor() {
       instanceCount++;
@@ -43,7 +44,24 @@ describe("createSRSession", () => {
     expect(getInstanceCount()).toBe(1);
   });
 
-  it("calls stop() on the active instance when destroy() is called", () => {
+  it("calls abort() when destroy() is called while recognition is active", () => {
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start(); // active = true
+    session.destroy();
+
+    expect(instances[0].abort).toHaveBeenCalledTimes(1);
+    expect(instances[0].stop).not.toHaveBeenCalled();
+  });
+
+  it("does NOT call abort() when destroy() is called after recognition already ended", () => {
+    // Root cause of the original bug: calling stop/abort on an already-ended SR
+    // instance re-activates the mic in Safari.
     const { MockSR, instances } = makeMockSR();
     const session = createSRSession(
       MockSR,
@@ -52,9 +70,11 @@ describe("createSRSession", () => {
     );
 
     session.start();
-    session.destroy();
+    instances[0].onend?.(); // recognition ends naturally (active → false)
+    session.destroy();      // should be a no-op on the rec instance
 
-    expect(instances[0].stop).toHaveBeenCalledTimes(1);
+    expect(instances[0].abort).not.toHaveBeenCalled();
+    expect(instances[0].stop).not.toHaveBeenCalled();
   });
 
   it("calls onEnd with accumulated final text when recognition ends", () => {
@@ -69,7 +89,6 @@ describe("createSRSession", () => {
     session.start();
     const rec = instances[0];
 
-    // Simulate final speech result then end
     rec.onresult?.({
       resultIndex: 0,
       results: Object.assign([[{ transcript: "in the beginning" }]], {
@@ -107,6 +126,52 @@ describe("createSRSession", () => {
 
     expect(onEnd).toHaveBeenNthCalledWith(1, "first pass");
     expect(onEnd).toHaveBeenNthCalledWith(2, ""); // cleared between sessions
+  });
+
+  it("does NOT call abort() when destroy() is called after onerror fired", () => {
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    instances[0].onerror?.(); // error fires (active → false)
+    session.destroy();
+
+    expect(instances[0].abort).not.toHaveBeenCalled();
+    expect(instances[0].stop).not.toHaveBeenCalled();
+  });
+
+  it("stop() calls rec.stop() while recognition is active", () => {
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    session.stop();
+
+    expect(instances[0].stop).toHaveBeenCalledTimes(1);
+    expect(instances[0].abort).not.toHaveBeenCalled();
+  });
+
+  it("stop() does NOT call rec.stop() after recognition already ended", () => {
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    instances[0].onend?.(); // recognition ends naturally (active → false)
+    session.stop();          // user taps stop — should be a no-op
+
+    expect(instances[0].stop).not.toHaveBeenCalled();
   });
 
   it("calls onError callback when recognition errors", () => {

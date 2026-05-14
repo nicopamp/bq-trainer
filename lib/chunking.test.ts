@@ -33,16 +33,17 @@ describe("chunkVerse", () => {
     ]);
   });
 
-  it("segment longer than 8 words is split into 6-word slices", () => {
-    // 18-word run from Acts 2:38 (no internal punctuation)
+  it("long unpunctuated clause (>8 words) stays as a single chunk — no mid-phrase split", () => {
     expect(
-      chunkVerse(
-        "and be baptized every one of you in the name of Jesus Christ for the remission of sins"
-      )
+      chunkVerse("And the multitude rose up together against them and beat them")
+    ).toEqual(["And the multitude rose up together against them and beat them"]);
+  });
+
+  it("long unpunctuated clause with no punctuation anywhere returns single chunk", () => {
+    expect(
+      chunkVerse("and be baptized every one of you in the name of Jesus Christ for the remission of sins")
     ).toEqual([
-      "and be baptized every one of",
-      "you in the name of Jesus",
-      "Christ for the remission of sins",
+      "and be baptized every one of you in the name of Jesus Christ for the remission of sins",
     ]);
   });
 
@@ -50,7 +51,7 @@ describe("chunkVerse", () => {
     expect(chunkVerse("")).toEqual([""]);
   });
 
-  it("Acts 2:38 — comma splits and long-segment splits interact correctly", () => {
+  it("Acts 2:38 — splits only at commas, long unpunctuated clause stays whole", () => {
     expect(
       chunkVerse(
         "Then Peter said unto them, Repent, and be baptized every one of you in the name of Jesus Christ for the remission of sins, and ye shall receive the gift of the Holy Ghost."
@@ -58,11 +59,8 @@ describe("chunkVerse", () => {
     ).toEqual([
       "Then Peter said unto them,",
       "Repent,",
-      "and be baptized every one of",
-      "you in the name of Jesus",
-      "Christ for the remission of sins,",
-      "and ye shall receive the gift",
-      "of the Holy Ghost.",
+      "and be baptized every one of you in the name of Jesus Christ for the remission of sins,",
+      "and ye shall receive the gift of the Holy Ghost.",
     ]);
   });
 });

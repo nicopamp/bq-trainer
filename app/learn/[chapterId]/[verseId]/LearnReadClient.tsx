@@ -33,11 +33,17 @@ export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep,
     await advanceLearnStep(verseId, nextStep);
     setSaving(false);
     if (nextStep >= 5) {
+      // Write optimistic state so the heatmap reflects "review" immediately on return to /home
+      try {
+        const stored = JSON.parse(localStorage.getItem("bqt_optimistic_states") || "{}");
+        stored[`${chapter}:${verseNum}`] = "review";
+        localStorage.setItem("bqt_optimistic_states", JSON.stringify(stored));
+      } catch {}
       setGraduated(true);
     } else {
       setStep(nextStep as 0 | 1 | 2 | 3 | 4);
     }
-  }, [verseId]);
+  }, [verseId, chapter, verseNum]);
 
   if (graduated) return <GraduateStep vref={vref} chapter={chapter} book={book} />;
 

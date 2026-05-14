@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in to Bible Quiz Trainer</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6efe0;font-family:Georgia,'Times New Roman',serif;-webkit-font-smoothing:antialiased;">
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+    style="background-color:#f6efe0;padding:40px 16px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+          style="max-width:520px;background-color:#fbf6ea;border:1px solid #efe6cf;border-radius:14px;overflow:hidden;">
+
+          <!-- Header bar -->
+          <tr>
+            <td style="padding:32px 40px 0 40px;">
+
+              <!-- Logo mark + wordmark -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <!-- BQT Mark (SVG with hard-coded colors, no CSS vars) -->
+                    <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="2" y="2" width="28" height="28" rx="7" fill="#1d1813"/>
+                      <text x="16" y="22" text-anchor="middle"
+                        font-family="Georgia,serif" font-weight="600" font-size="18"
+                        fill="#e6c272" font-style="italic">B</text>
+                      <line x1="9" y1="6" x2="13" y2="6" stroke="#e6c272" stroke-width="1.2" stroke-linecap="round"/>
+                    </svg>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:600;color:#1d1813;letter-spacing:-0.01em;">Bible Quiz Trainer</span>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:20px 40px 0 40px;">
+              <div style="height:1px;background-color:#efe6cf;"></div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 40px 40px 40px;">
+
+              <!-- Eyebrow -->
+              <p style="margin:0 0 8px 0;font-family:Georgia,'Times New Roman',serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#8a7e6c;">Sign In</p>
+
+              <!-- Heading -->
+              <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;color:#1d1813;line-height:1.25;font-style:italic;">Your sign-in link</h1>
+
+              <!-- Body copy -->
+              <p style="margin:0 0 24px 0;font-family:Georgia,'Times New Roman',serif;font-size:16px;color:#4a4036;line-height:1.6;">
+                Click the button below to sign in to Bible Quiz Trainer. This link expires in 1 hour and can only be used once.
+              </p>
+
+              <!-- CTA button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-radius:8px;background-color:#c9842c;">
+                    <a href="{{ .ConfirmationURL }}"
+                      style="display:inline-block;padding:14px 28px;font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:600;color:#fbf6ea;text-decoration:none;border-radius:8px;letter-spacing:0.01em;">
+                      Sign in to BQT
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Fallback URL -->
+              <p style="margin:24px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#8a7e6c;line-height:1.5;">
+                If the button doesn't work, copy and paste this URL into your browser:<br/>
+                <a href="{{ .ConfirmationURL }}"
+                  style="color:#c9842c;text-decoration:underline;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <!-- Security note -->
+              <p style="margin:20px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#8a7e6c;line-height:1.5;">
+                If you didn't request this link, you can safely ignore this email. Someone may have entered your address by mistake.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:0 40px 28px 40px;border-top:1px solid #efe6cf;">
+              <p style="margin:20px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:12px;color:#8a7e6c;text-align:center;">
+                Bible Quiz Trainer &mdash; Acts 1&ndash;9 memorization
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

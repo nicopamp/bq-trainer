@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Mark } from "@/components/ui/Mark";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { HMCell } from "@/components/ui/HMCell";
+import { HeatmapRows } from "@/components/ui/HeatmapRows";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { VerseState } from "@/lib/supabase/types";
 import { getUserVerseStates, getStreak, getWeeklyReviews, getActiveBook, getBookChapterCounts, getProfile } from "@/lib/supabase/queries";
@@ -323,28 +323,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {Object.entries(CHAPTER_COUNTS).map(([chStr, count]) => {
-                  const ch = Number(chStr);
-                  const verses = Array.from({ length: count }, (_, i) => verseMap[ch]?.[i + 1] ?? "new");
-                  const mastered = verses.filter((v) => v === "mastered" || v === "review").length;
-                  const pct = Math.round((mastered / count) * 100);
-                  return (
-                    <div key={ch} className="hm-row">
-                      <Link href={`/chapter/${ch}`} style={{ textDecoration: "none", color: "inherit" }}>
-                        <div className="t-display" style={{ fontSize: 18, lineHeight: 1 }}>Ch. {ch}</div>
-                        <div className="t-mono" style={{ fontSize: 10, color: "var(--ink-muted)" }}>{count}v</div>
-                      </Link>
-                      <div className="hm-grid">
-                        {verses.map((lvl, vi) => (
-                          <HMCell key={vi} level={lvl} label={`${ch}:${vi + 1}`} href={`/learn/${ch}/${vi + 1}?from=home`} />
-                        ))}
-                      </div>
-                      <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-soft)", textAlign: "right" }}>{pct}%</div>
-                    </div>
-                  );
-                })}
-              </div>
+              <HeatmapRows serverVerseMap={verseMap} chapterCounts={CHAPTER_COUNTS} userId={user.id} />
             </div>
 
             {/* stats strip — mobile only */}

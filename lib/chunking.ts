@@ -1,26 +1,14 @@
 /**
  * Splits a KJV verse into recallable phrase chunks.
- * Splits on clause boundaries (commas, semicolons, colons), max 8 words per chunk.
+ * Splits exclusively at clause boundaries (commas, semicolons, colons).
+ * Long unpunctuated clauses are kept as a single chunk.
  */
 export function chunkVerse(text: string): string[] {
-  // Split on punctuation boundaries while keeping the punctuation
-  const raw = text
-    .replace(/([,;:])\s+/g, "$1\n")
+  const chunks = text
+    .replace(/([,;:.?!])\s+/g, "$1\n")
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
-
-  const chunks: string[] = [];
-  for (const segment of raw) {
-    const words = segment.split(" ");
-    if (words.length <= 8) {
-      chunks.push(segment);
-    } else {
-      for (let i = 0; i < words.length; i += 6) {
-        chunks.push(words.slice(i, i + 6).join(" "));
-      }
-    }
-  }
 
   return chunks.length > 0 ? chunks : [text];
 }

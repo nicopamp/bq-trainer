@@ -180,17 +180,13 @@ function ChunkStep({ text, chunks, vref, backHref, book, onNext, saving }: {
         <div style={{ marginTop: 14, display: "flex", gap: 10, padding: "12px 14px", background: "var(--saffron-50)", borderRadius: "var(--r-md)", border: "1px solid var(--saffron-100)" }}>
           <Icon name="sparkles" size={16} color="var(--saffron-700)" />
           <div style={{ fontSize: 12, lineHeight: 1.4, color: "var(--ink-soft)" }}>
-            <span style={{ fontWeight: 600, color: "var(--saffron-700)" }}>Cumulative chunking · </span>
-            recite every phrase before the next is added — the proven way to lock in word order.
+            <span style={{ fontWeight: 600, color: "var(--saffron-700)" }}>How it works: </span>
+            say the highlighted phrase aloud. Each time you tap &ldquo;Got it,&rdquo; a new phrase is added — but you must say <em>all previous phrases plus the new one</em> from the beginning. Building cumulatively locks in word order so you can recall the whole verse in competition.
           </div>
         </div>
       </div>
 
       <div className="bottom-bar" style={{ padding: "16px 22px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14, fontSize: 12, color: "var(--ink-soft)" }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--leaf-500)", boxShadow: "0 0 0 4px rgba(91,110,79,.18)" }} />
-          listening · read the highlighted phrase aloud
-        </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={handleSpeak}>
             <Icon name={playing ? "pause" : "volume"} size={18} color="var(--ink)" />

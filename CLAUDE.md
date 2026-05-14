@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git workflow
+
+**Never commit directly to `main`.** Always work on a branch and open a PR. The `check` CI job (lint + type-check + build) must pass before merging. Branch protection enforces this — a direct push to main broke the Vercel production build in the past.
+
+Workflow for every task:
+1. `git checkout -b <branch-name>` before making any changes
+2. Commit on the branch
+3. `gh pr create` to open a PR
+4. Wait for CI to pass, then merge
+
 ## Commands
 
 ```bash

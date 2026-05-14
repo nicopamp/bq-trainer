@@ -74,6 +74,10 @@ _Avoid_: question type, exercise type
 A drill mode where the quizzer hears the opening words of a verse, then must (1) complete the verse aloud, then (2) identify the reference. The reference response is adaptive: multiple-choice for verses in `learning` state, free-type once the verse reaches `review` state. Models the Quotation Completion Question competition format. Distinct from Finish-it, which drills spoken completion only with no reference identification.
 _Avoid_: listen mode, reference quiz
 
+**Verse Cue**:
+The minimum number of opening words required to uniquely identify a verse among all other verses in the same chapter. Used as the audio played in the Audio Mode listen phase and displayed as reference text in the speak phase. Computed per-chapter and pre-generated as a static MP3 file (`acts_{ch}_{v}_cue.mp3`) alongside a `cues.json` manifest. Scoped to chapter (not book) — a future full-book drill mode will require recomputation with broader scope.
+_Avoid_: opening chunk, first words, prompt
+
 **Finish-it Mode**:
 A drill mode where the quizzer is shown the first portion of a verse and must speak the remainder aloud. Graded with ASR Tolerance (lenient word-overlap). No reference identification required.
 _Avoid_: completion mode

@@ -187,10 +187,6 @@ function ChunkStep({ text, chunks, vref, backHref, book, onNext, saving }: {
       </div>
 
       <div className="bottom-bar" style={{ padding: "16px 22px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14, fontSize: 12, color: "var(--ink-soft)" }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--leaf-500)", boxShadow: "0 0 0 4px rgba(91,110,79,.18)" }} />
-          listening · read the highlighted phrase aloud
-        </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-ghost btn-lg" style={{ width: 56, padding: 0 }} onClick={handleSpeak}>
             <Icon name={playing ? "pause" : "volume"} size={18} color="var(--ink)" />

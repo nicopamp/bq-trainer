@@ -5,7 +5,7 @@
  */
 export function chunkVerse(text: string): string[] {
   const chunks = text
-    .replace(/([,;:])\s+/g, "$1\n")
+    .replace(/([,;:.?!])\s+/g, "$1\n")
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean);

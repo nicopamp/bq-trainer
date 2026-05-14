@@ -51,6 +51,20 @@ describe("chunkVerse", () => {
     expect(chunkVerse("")).toEqual([""]);
   });
 
+  it("splits on question mark — Acts 1:11", () => {
+    expect(
+      chunkVerse(
+        "Ye men of Galilee, why stand ye gazing up into heaven? this same Jesus, which is taken up from you into heaven, shall so come in like manner as ye have seen him go into heaven."
+      )
+    ).toEqual([
+      "Ye men of Galilee,",
+      "why stand ye gazing up into heaven?",
+      "this same Jesus,",
+      "which is taken up from you into heaven,",
+      "shall so come in like manner as ye have seen him go into heaven.",
+    ]);
+  });
+
   it("Acts 2:38 — splits only at commas, long unpunctuated clause stays whole", () => {
     expect(
       chunkVerse(

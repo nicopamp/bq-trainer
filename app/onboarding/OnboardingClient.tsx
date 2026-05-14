@@ -33,7 +33,6 @@ const SLIDES = [
 
 const PROFILE_STEP = SLIDES.length;
 const TOTAL_STEPS = SLIDES.length + 1;
-const PENDING_KEY = "bqt_pending_profile";
 
 interface PendingProfile {
   fullName: string;
@@ -41,53 +40,51 @@ interface PendingProfile {
   church: string;
 }
 
-function readPendingProfile(): PendingProfile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(PENDING_KEY);
-    return raw ? (JSON.parse(raw) as PendingProfile) : null;
-  } catch {
-    return null;
-  }
+function pendingKey(userId: string) {
+  return `bqt_pending_profile_${userId}`;
 }
 
 export function OnboardingClient({
   initialProfile,
+  userId,
 }: {
   initialProfile: Profile | null;
+  userId: string;
 }) {
   const isNewUser = initialProfile === null;
 
-  // For new users, check localStorage for a cached pending save
-  const [cached] = useState<PendingProfile | null>(
-    isNewUser ? readPendingProfile : () => null
-  );
-
-  // Initialise form state: cached > existing profile > blank
-  const [step, setStep] = useState(
-    cached || !isNewUser ? PROFILE_STEP : 0
-  );
-  const [fullName, setFullName] = useState(
-    cached?.fullName ?? initialProfile?.full_name ?? ""
-  );
+  // Initialise only from server-provided data so SSR and first client render match
+  const [step, setStep] = useState(isNewUser ? 0 : PROFILE_STEP);
+  const [fullName, setFullName] = useState(initialProfile?.full_name ?? "");
   const [quizCategory, setQuizCategory] = useState<"TBQ" | "EABQ" | "">(
-    cached?.quizCategory ?? initialProfile?.quiz_category ?? ""
+    initialProfile?.quiz_category ?? ""
   );
-  const [church, setChurch] = useState(
-    cached?.church ?? initialProfile?.church ?? ""
-  );
+  const [church, setChurch] = useState(initialProfile?.church ?? "");
   const [isPending, startTransition] = useTransition();
   const [saveError, setSaveError] = useState(false);
   const router = useRouter();
 
-  // New-user only: if there's a cached pending profile, auto-retry on mount
+  // After mount: check for a pending save cached under this specific user's key
   useEffect(() => {
-    if (!cached) return;
+    if (!isNewUser) return;
+    let data: PendingProfile;
+    try {
+      const raw = localStorage.getItem(pendingKey(userId));
+      if (!raw) return;
+      data = JSON.parse(raw) as PendingProfile;
+    } catch {
+      localStorage.removeItem(pendingKey(userId));
+      return;
+    }
+    setFullName(data.fullName);
+    setQuizCategory(data.quizCategory);
+    setChurch(data.church);
+    setStep(PROFILE_STEP);
     setSaveError(false);
     startTransition(async () => {
       try {
-        await createProfile(cached);
-        localStorage.removeItem(PENDING_KEY);
+        await createProfile(data);
+        localStorage.removeItem(pendingKey(userId));
         router.push("/home");
       } catch {
         setSaveError(true);
@@ -115,7 +112,6 @@ export function OnboardingClient({
     };
     startTransition(async () => {
       if (!isNewUser) {
-        // Existing user editing — updateProfile, no cache needed
         try {
           await updateProfile(data);
           router.push("/home");
@@ -128,7 +124,7 @@ export function OnboardingClient({
       // New user — attempt 1
       try {
         await createProfile(data);
-        localStorage.removeItem(PENDING_KEY);
+        localStorage.removeItem(pendingKey(userId));
         router.push("/home");
         return;
       } catch {}
@@ -137,13 +133,13 @@ export function OnboardingClient({
       await new Promise<void>((r) => setTimeout(r, 1500));
       try {
         await createProfile(data);
-        localStorage.removeItem(PENDING_KEY);
+        localStorage.removeItem(pendingKey(userId));
         router.push("/home");
         return;
       } catch {}
 
-      // Both failed — cache for background retry on next load
-      localStorage.setItem(PENDING_KEY, JSON.stringify(data));
+      // Both failed — cache under this user's key for retry on next load
+      localStorage.setItem(pendingKey(userId), JSON.stringify(data));
       setSaveError(true);
     });
   }
@@ -163,7 +159,7 @@ export function OnboardingClient({
           gap: 32,
         }}
       >
-        {/* X button — existing users only */}
+        {/* Close button — existing users only; new users would loop back via home→onboarding redirect */}
         {!isNewUser && (
           <button
             onClick={() => router.push("/home")}

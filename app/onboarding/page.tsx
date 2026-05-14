@@ -12,5 +12,5 @@ export default async function OnboardingPage() {
 
   const profile = await getProfile(supabase, user.id);
 
-  return <OnboardingClient initialProfile={profile} />;
+  return <OnboardingClient initialProfile={profile} userId={user.id} />;
 }

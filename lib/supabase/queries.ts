@@ -137,6 +137,24 @@ export async function getChapterVerses(
   return (data as ChapterVerseRow[]) ?? [];
 }
 
+/** Fetch all verses for the given chapters (used to compute Verse Cues). */
+export async function getVersesForChapters(
+  supabase: SupabaseClient,
+  chapters: number[],
+  book = "Acts"
+): Promise<VerseRef[]> {
+  if (chapters.length === 0) return [];
+  const { data } = await supabase
+    .from("verses")
+    .select("id, book, chapter, verse, text")
+    .eq("book", book)
+    .eq("translation", "KJV")
+    .in("chapter", chapters)
+    .order("chapter")
+    .order("verse");
+  return (data as VerseRef[]) ?? [];
+}
+
 /** Derive the active book from the user's user_verses rows. */
 export async function getActiveBook(
   supabase: SupabaseClient,

@@ -13,6 +13,7 @@ export interface DrillItemInput {
   verseNum: string | number;
   text: string;
   state: string;
+  cueText: string;
 }
 
 export interface DrillItem extends DrillItemInput {

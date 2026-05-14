@@ -171,6 +171,22 @@ export function SettingsClient({ bookLabel, bookName }: Props) {
           <div className="eyebrow" style={{ marginBottom: 10 }}>Account</div>
           <div className="card" style={{ overflow: "hidden" }}>
             <button
+              onClick={() => router.push("/onboarding?tour=1")}
+              style={{
+                width: "100%", padding: "14px 16px",
+                display: "flex", alignItems: "center", gap: 12,
+                background: "none", border: "none", cursor: "pointer", textAlign: "left",
+                borderBottom: "1px solid var(--hairline)",
+              }}
+            >
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--bg-deep)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon name="sparkles" size={16} color="var(--ink-soft)" />
+              </div>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: "var(--ink)" }}>Revisit app tour</span>
+              <Icon name="chevron-right" size={16} color="var(--ink-muted)" />
+            </button>
+
+            <button
               onClick={handleSignOut}
               disabled={signingOut}
               style={{

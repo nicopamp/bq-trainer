@@ -63,10 +63,8 @@ export function createSRSession(
       lastTranscriptText = "";
       const r = rec;
       rec = null; // ensureRec() creates a fresh instance on the next start()
-      // Replace handlers with no-ops to silence any late-firing events on the old instance.
-      // abort() is intentionally NOT called here — calling it on an ended Safari SR
-      // instance can briefly re-activate the mic. The explicit rec.stop() in onresult
-      // is what releases the indicator; by the time onend fires, the mic is already off.
+      // No-ops silence any late events; abort() is intentionally omitted — calling it
+      // on an ended Safari SR re-activates the mic. stop() in onresult handles release.
       r.onend = () => {};
       r.onerror = () => {};
       callbacks.onEnd(text);

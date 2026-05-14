@@ -189,12 +189,6 @@ describe("gradeRecallPass", () => {
       expect(result.wordResults.find((r) => r.word === "cornelius")?.hit).toBe(false);
     });
 
-    it("without proper noun exclusion the same attempt would fail at 80% threshold", () => {
-      // 3/4 = 75% → below 80% if Cornelius were included — verifies the fix matters
-      const withoutExclusion = 3 / 4;
-      expect(withoutExclusion).toBeLessThan(0.80);
-    });
-
     it("first word capitalization is never treated as a proper noun", () => {
       // "The" at index 0 is excluded from detection regardless of case
       const result = gradeRecallPass("the former treatise", "The former treatise", 0);

@@ -52,7 +52,18 @@ To run the seed script you also need `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`
 
 **Design system:** All CSS variables are in `app/globals.css`. Key tokens: `--saffron-500` (#c9842c) = primary CTA, `--leaf-500` (#5b6e4f) = mastered/success, `--rust-500` (#a8451f) = due/again/streak. Fonts: Fraunces (display serif), Inter Tight (UI), JetBrains Mono (refs/mono). Use `.t-display`, `.t-mono`, `.eyebrow` utility classes. Avoid inline font-family declarations.
 
-**Voice:** `window.speechSynthesis` for TTS (listen buttons). `SpeechRecognition`/`webkitSpeechRecognition` for voice input. Always gate with capability checks and degrade gracefully (manual grade buttons as fallback).
+**Voice:** `window.speechSynthesis` for TTS (listen buttons). `SpeechRecognition`/`webkitSpeechRecognition` for voice input. Always gate with capability checks and degrade gracefully (manual grade buttons as fallback). The `useSpeechRecognition` hook wraps a `createSRSession` factory (`lib/speechRecognitionSession.ts`) that creates one SR instance lazily and reuses it — preventing per-tap permission re-prompts. The hook's `useEffect` cleanup calls `destroy()` on unmount to release the mic.
+
+## Environments
+
+Two Supabase projects — one for production, one for preview:
+
+- **Production** (`bq-trainer.bridgeviewchristian.com`): production Supabase project. Vercel "Production" env vars.
+- **Preview** (Vercel auto-generated URLs, e.g. `bq-trainer-git-{branch}-nicopamps-projects.vercel.app`): separate Supabase project. Vercel "Preview" env vars.
+
+The preview Supabase has `https://bq-trainer-*-nicopamps-projects.vercel.app/**` in its allowed Redirect URLs so auth flows work across all auto-generated PR preview URLs. There is no fixed preview domain — use the Vercel-generated URL for a given PR.
+
+GitHub Actions secrets (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) exist only for the CI build check and point to production. They do not affect deployments — Vercel's per-environment variables are the source of truth.
 
 ## Agent skills
 

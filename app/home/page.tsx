@@ -37,6 +37,8 @@ export default async function HomePage() {
     getProfile(supabase, user.id),
   ]);
 
+  if (!profile) redirect("/onboarding");
+
   const CHAPTER_COUNTS = await getBookChapterCounts(supabase, activeBook);
   const TOTAL_VERSES = Object.values(CHAPTER_COUNTS).reduce((a, b) => a + b, 0);
   const chapters = Object.keys(CHAPTER_COUNTS).map(Number).sort((a, b) => a - b);

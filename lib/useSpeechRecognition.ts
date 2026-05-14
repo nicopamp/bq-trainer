@@ -15,6 +15,7 @@ export function useSpeechRecognition({
   onError,
 }: Options = {}) {
   const [isListening, setIsListening] = useState(false);
+  const [isGrading, setIsGrading] = useState(false);
   const [transcript, setTranscript] = useState("");
   const sessionRef = useRef<SRSession | null>(null);
   const onFinalRef = useRef(onFinal);
@@ -36,8 +37,10 @@ export function useSpeechRecognition({
   }, [interimResults, lang]);
 
   const stopListening = useCallback(() => {
-    sessionRef.current?.stop();
+    if (!sessionRef.current) return;
+    sessionRef.current.stop();
     setIsListening(false);
+    setIsGrading(true);
   }, []);
 
   const startListening = useCallback(() => {
@@ -55,10 +58,12 @@ export function useSpeechRecognition({
           onTranscript: (text) => setTranscript(text),
           onEnd: (finalText) => {
             setIsListening(false);
+            setIsGrading(false);
             if (finalText) onFinalRef.current?.(finalText);
           },
           onError: () => {
             setIsListening(false);
+            setIsGrading(false);
             onErrorRef.current?.();
           },
         }
@@ -66,9 +71,10 @@ export function useSpeechRecognition({
     }
 
     setTranscript("");
+    setIsGrading(false);
     setIsListening(true);
     sessionRef.current.start();
   }, [isSupported, interimResults, lang]);
 
-  return { startListening, stopListening, transcript, isListening, isSupported };
+  return { startListening, stopListening, transcript, isListening, isGrading, isSupported };
 }

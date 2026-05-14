@@ -77,8 +77,27 @@ export interface RecallPassResult {
 }
 
 /**
+ * Returns the set of word indices (0-based) that are KJV proper nouns —
+ * words capitalized mid-sentence (not the first word) with length > 1.
+ * These are excluded from the accuracy denominator in gradeRecallPass because
+ * ASR reliably fails to transcribe them (Theophilus, Cornelius, etc.).
+ * They still appear in wordResults so the UI can show them as missed.
+ */
+function properNounIndices(target: string): Set<number> {
+  const words = target.split(/\s+/).filter(Boolean);
+  const indices = new Set<number>();
+  for (let i = 1; i < words.length; i++) {
+    const stripped = words[i].replace(/[^\w]/g, "");
+    if (stripped.length > 1 && /^[A-Z]/.test(stripped)) indices.add(i);
+  }
+  return indices;
+}
+
+/**
  * Grade a single Recall step pass using bag-of-words normalization.
  * passIndex is 0-based; threshold comes from RECALL_THRESHOLDS[passIndex].
+ * Proper nouns (capitalized mid-sentence, length > 1) are excluded from the
+ * accuracy denominator — ASR cannot reliably transcribe KJV names.
  */
 export function gradeRecallPass(transcript: string, target: string, passIndex: number): RecallPassResult {
   const targetWords = normalizeWords(target);
@@ -94,7 +113,11 @@ export function gradeRecallPass(transcript: string, target: string, passIndex: n
     }
     return { word, hit: false };
   });
-  const accuracy = wordResults.filter((r) => r.hit).length / targetWords.length;
+  const excluded = properNounIndices(target);
+  const gradable = wordResults.filter((_, i) => !excluded.has(i));
+  const accuracy = gradable.length > 0
+    ? gradable.filter((r) => r.hit).length / gradable.length
+    : 1;
   const threshold = RECALL_THRESHOLDS[passIndex] ?? RECALL_THRESHOLDS[RECALL_THRESHOLDS.length - 1];
   return { pass: accuracy >= threshold, accuracy, wordResults };
 }

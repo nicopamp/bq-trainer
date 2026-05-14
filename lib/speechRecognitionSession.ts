@@ -28,6 +28,7 @@ export function createSRSession(
 ): SRSession {
   let rec: any = null;
   let finalText = "";
+  let lastTranscriptText = ""; // tracks both final and interim for stop-mid-utterance fallback
   let active = false; // true only between rec.start() and onend/onerror firing
 
   function ensureRec() {
@@ -45,18 +46,27 @@ export function createSRSession(
         if (e.results[i].isFinal) finalText += t;
         else interim += t;
       }
-      callbacks.onTranscript(finalText || interim);
+      lastTranscriptText = finalText || interim;
+      callbacks.onTranscript(lastTranscriptText);
     };
 
     rec.onend = () => {
+      // Guard prevents double-fire if onend is triggered by an abort() call
+      // after the session has already ended naturally.
+      if (!active) return;
       active = false;
-      const text = finalText;
+      const text = finalText || lastTranscriptText; // fallback to interim on Safari/Firefox
       finalText = "";
+      lastTranscriptText = "";
+      // Null rec so the browser can GC the instance and release the mic indicator.
+      // ensureRec() creates a fresh instance on the next start().
+      rec = null;
       callbacks.onEnd(text);
     };
 
     rec.onerror = () => {
       active = false;
+      rec = null;
       callbacks.onError();
     };
 
@@ -67,6 +77,7 @@ export function createSRSession(
     start() {
       const r = ensureRec();
       finalText = "";
+      lastTranscriptText = "";
       active = true;
       r.start();
     },

@@ -155,6 +155,30 @@ describe("gradeRecallPass", () => {
       expect(result.pass).toBe(false);
     });
   });
+
+  describe("proper noun exclusion", () => {
+    it("proper noun missed by ASR does not fail the attempt when all other words match", () => {
+      // "Cornelius" is a proper noun at index 1 → excluded from accuracy
+      // Transcript omits it (ASR failure); other 3 words hit → 3/3 = 100% → pass
+      const result = gradeRecallPass("and answered him", "and Cornelius answered him", 0);
+      expect(result.pass).toBe(true);
+      // Proper noun still appears in wordResults so UI can highlight it
+      expect(result.wordResults.find((r) => r.word === "cornelius")?.hit).toBe(false);
+    });
+
+    it("without proper noun exclusion the same attempt would fail at 80% threshold", () => {
+      // 3/4 = 75% → below 80% if Cornelius were included — verifies the fix matters
+      const withoutExclusion = 3 / 4;
+      expect(withoutExclusion).toBeLessThan(0.80);
+    });
+
+    it("first word capitalization is never treated as a proper noun", () => {
+      // "The" at index 0 is excluded from detection regardless of case
+      const result = gradeRecallPass("the former treatise", "The former treatise", 0);
+      expect(result.pass).toBe(true);
+      expect(result.accuracy).toBe(1);
+    });
+  });
 });
 
 describe("gradeVoice", () => {

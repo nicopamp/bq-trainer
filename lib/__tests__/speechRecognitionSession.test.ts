@@ -111,21 +111,58 @@ describe("createSRSession", () => {
 
     // First session: say something
     session.start();
-    const rec = instances[0];
-    rec.onresult?.({
+    instances[0].onresult?.({
       resultIndex: 0,
       results: Object.assign([[{ transcript: "first pass" }]], {
         0: Object.assign([{ transcript: "first pass" }], { isFinal: true }),
       }),
     });
-    rec.onend?.();
+    instances[0].onend?.();
 
-    // Second session: say nothing, just end
+    // Second session: fresh instance created after first ended; say nothing, just end
     session.start();
-    rec.onend?.();
+    instances[1].onend?.();
 
     expect(onEnd).toHaveBeenNthCalledWith(1, "first pass");
     expect(onEnd).toHaveBeenNthCalledWith(2, ""); // cleared between sessions
+  });
+
+  it("creates a new SR instance after the previous session ends (mic released)", () => {
+    const { MockSR, getInstanceCount, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    instances[0].onend?.(); // session ends naturally
+    session.start();        // next tap — should create a fresh instance
+
+    expect(getInstanceCount()).toBe(2);
+  });
+
+  it("uses interim transcript as fallback when recognition ends with no final results", () => {
+    const { MockSR, instances } = makeMockSR();
+    const onEnd = vi.fn();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: true, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd, onError: vi.fn() }
+    );
+
+    session.start();
+    // Interim result arrives (browser hasn't finalized yet)
+    instances[0].onresult?.({
+      resultIndex: 0,
+      results: Object.assign([[{ transcript: "partial text" }]], {
+        0: Object.assign([{ transcript: "partial text" }], { isFinal: false }),
+      }),
+    });
+    // onend fires with no isFinal results (user tapped stop mid-utterance on Safari)
+    instances[0].onend?.();
+
+    expect(onEnd).toHaveBeenCalledWith("partial text");
   });
 
   it("does NOT call abort() when destroy() is called after onerror fired", () => {

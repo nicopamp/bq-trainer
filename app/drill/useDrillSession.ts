@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { submitReview } from "@/lib/actions/reviews";
 import type { DrillMode } from "@/lib/supabase/types";
+import { shuffleRotation } from "@/lib/drillRotation";
 
 type Mode = "audio" | "finish_it" | "type_out" | "ref_to_verse";
 
@@ -44,12 +45,6 @@ export interface DrillSession {
   handleResult: (grade: 1 | 2 | 3 | 4, transcript?: string, accuracy?: number) => Promise<void>;
 }
 
-function getModeRotation(order: string): Mode[] {
-  if (order === "audio")    return ["audio", "ref_to_verse", "finish_it", "type_out"];
-  if (order === "type_out") return ["type_out", "finish_it", "ref_to_verse", "audio"];
-  return ["audio", "finish_it", "type_out", "ref_to_verse"];
-}
-
 export function useDrillSession(items: DrillItemInput[]): DrillSession {
   const [idx, setIdx] = useState(0);
   const [done, setDone] = useState(false);
@@ -57,7 +52,7 @@ export function useDrillSession(items: DrillItemInput[]): DrillSession {
 
   const [orderedItems] = useState<DrillItem[]>(() => {
     const order = localStorage.getItem("bqt_drill_order") ?? "mixed";
-    const rotation = getModeRotation(order);
+    const rotation = shuffleRotation(order) as Mode[];
     return items.map((item, i) => ({ ...item, mode: rotation[i % rotation.length] }));
   });
 

@@ -4,10 +4,13 @@ import { LearnReadClient } from "./LearnReadClient";
 
 export default async function LearnPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ chapterId: string; verseId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { chapterId, verseId } = await params;
+  const { from } = await searchParams;
   const ch = parseInt(chapterId);
   const v = parseInt(verseId);
 
@@ -40,6 +43,8 @@ export default async function LearnPage({
     redirect(`/drill?verse=${verse.id}`);
   }
 
+  const backHref = from === "home" ? "/home" : `/chapter/${ch}`;
+
   return (
     <LearnReadClient
       verseId={verse.id}
@@ -48,6 +53,7 @@ export default async function LearnPage({
       text={verse.text}
       initialStep={step as 0 | 1 | 2 | 3 | 4}
       book={verse.book}
+      backHref={backHref}
     />
   );
 }

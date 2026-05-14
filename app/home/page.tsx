@@ -330,19 +330,18 @@ export default async function HomePage() {
                   const mastered = verses.filter((v) => v === "mastered" || v === "review").length;
                   const pct = Math.round((mastered / count) * 100);
                   return (
-                    <Link key={ch} href={`/chapter/${ch}`} className="hm-row" style={{ textDecoration: "none", color: "inherit" }}>
-                      <div>
+                    <div key={ch} className="hm-row">
+                      <Link href={`/chapter/${ch}`} style={{ textDecoration: "none", color: "inherit" }}>
                         <div className="t-display" style={{ fontSize: 18, lineHeight: 1 }}>Ch. {ch}</div>
                         <div className="t-mono" style={{ fontSize: 10, color: "var(--ink-muted)" }}>{count}v</div>
-                      </div>
+                      </Link>
                       <div className="hm-grid">
                         {verses.map((lvl, vi) => (
-                          <HMCell key={vi} level={lvl} label={`${ch}:${vi + 1}`} />
+                          <HMCell key={vi} level={lvl} label={`${ch}:${vi + 1}`} href={`/learn/${ch}/${vi + 1}?from=home`} />
                         ))}
-                        {/* Placeholders — extra cells are ignored by the grid */}
                       </div>
                       <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-soft)", textAlign: "right" }}>{pct}%</div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

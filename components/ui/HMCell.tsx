@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { VerseState } from "@/lib/supabase/types";
 
 interface HMCellProps {
@@ -6,19 +7,35 @@ interface HMCellProps {
   label?: string;
   size?: number;
   onClick?: () => void;
+  href?: string;
 }
 
-export function HMCell({ level, current = false, label, size, onClick }: HMCellProps) {
+export function HMCell({ level, current = false, label, size, onClick, href }: HMCellProps) {
+  const style = {
+    ...(size ? { width: size, height: size } : {}),
+    boxShadow: current ? "0 0 0 2px var(--ink), 0 0 0 4px var(--saffron-500)" : "none",
+    cursor: href || onClick ? "pointer" : "default",
+    display: "block",
+  };
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        prefetch={false}
+        className={`hm-cell lvl-${level}`}
+        title={label}
+        style={style}
+      />
+    );
+  }
+
   return (
     <div
       className={`hm-cell lvl-${level}`}
       title={label}
       onClick={onClick}
-      style={{
-        ...(size ? { width: size, height: size } : {}),
-        boxShadow: current ? "0 0 0 2px var(--ink), 0 0 0 4px var(--saffron-500)" : "none",
-        cursor: onClick ? "pointer" : "default",
-      }}
+      style={style}
     />
   );
 }

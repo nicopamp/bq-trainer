@@ -17,15 +17,15 @@ interface Props {
   text: string;
   initialStep: 0 | 1 | 2 | 3 | 4;
   book?: string;
+  backHref?: string;
 }
 
-export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep, book = "Acts" }: Props) {
+export function LearnReadClient({ verseId, chapter, verseNum, text, initialStep, book = "Acts", backHref = `/chapter/${chapter}` }: Props) {
   const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(initialStep);
   const [graduated, setGraduated] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
   const vref = `${chapter}:${verseNum}`;
-  const backHref = `/chapter/${chapter}`;
   const chunks = chunkVerse(text);
 
   const advance = useCallback(async (nextStep: number) => {

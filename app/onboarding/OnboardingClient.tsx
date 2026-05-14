@@ -47,9 +47,11 @@ function pendingKey(userId: string) {
 export function OnboardingClient({
   initialProfile,
   userId,
+  isTour = false,
 }: {
   initialProfile: Profile | null;
   userId: string;
+  isTour?: boolean;
 }) {
   const isNewUser = initialProfile === null;
 
@@ -66,7 +68,7 @@ export function OnboardingClient({
 
   // After mount: check for a pending save cached under this specific user's key
   useEffect(() => {
-    if (!isNewUser) return;
+    if (!isNewUser || isTour) return;
     let data: PendingProfile;
     try {
       const raw = localStorage.getItem(pendingKey(userId));
@@ -96,10 +98,15 @@ export function OnboardingClient({
   const isLast = step === SLIDES.length - 1;
   const current = isSlide ? SLIDES[step] : null;
   const profileReady = isProfileComplete({ fullName, quizCategory, church });
+  const totalSteps = isTour ? SLIDES.length : TOTAL_STEPS;
 
   function handleNext() {
-    if (isLast) setStep(PROFILE_STEP);
-    else setStep(step + 1);
+    if (isLast) {
+      if (isTour) router.push("/home");
+      else setStep(PROFILE_STEP);
+    } else {
+      setStep(step + 1);
+    }
   }
 
   function handleSubmit() {
@@ -182,9 +189,9 @@ export function OnboardingClient({
 
         <Mark size={48} />
 
-        {/* step indicator — 5 dots */}
+        {/* step indicator — 4 dots in tour mode, 5 in first-run */}
         <div style={{ display: "flex", gap: 6 }}>
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
               style={{
@@ -403,7 +410,7 @@ export function OnboardingClient({
             <button
               className="btn btn-ghost btn-md"
               style={{ width: "100%" }}
-              onClick={() => setStep(PROFILE_STEP)}
+              onClick={() => (isTour ? router.push("/home") : setStep(PROFILE_STEP))}
             >
               Skip intro
             </button>

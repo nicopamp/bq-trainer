@@ -211,9 +211,24 @@ export default async function HomePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="card" style={{ padding: 18, textAlign: "center" }}>
-                    <div className="t-display" style={{ fontSize: 22, marginBottom: 6 }}>All caught up! 🎉</div>
-                    <p style={{ fontSize: 13, color: "var(--ink-muted)" }}>No reviews due today. Keep learning new verses.</p>
+                  <div className="card" style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div>
+                      <div className="eyebrow" style={{ marginBottom: 6, color: "var(--leaf-500)" }}>All caught up</div>
+                      <div className="t-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 4 }}>No reviews due</div>
+                      <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0, lineHeight: 1.5 }}>
+                        Your schedule is clear. Use this time to push forward on new material or sharpen what you already know.
+                      </p>
+                    </div>
+                    {masteredCount > 0 && (
+                      <Link href="/drill?force=true" className="btn btn-saffron btn-lg" style={{ display: "flex", width: "100%" }}>
+                        Practice what you know <Icon name="chevron-right" size={18} color="#fff" />
+                      </Link>
+                    )}
+                    {nextLearnChapter && nextLearnVerse && (
+                      <Link href={`/learn/${nextLearnChapter}/${nextLearnVerse}`} className="btn btn-ghost btn-lg" style={{ display: "flex", width: "100%" }}>
+                        Learn next verse <Icon name="chevron-right" size={18} color="var(--ink)" />
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

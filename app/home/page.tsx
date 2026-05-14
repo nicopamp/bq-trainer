@@ -189,9 +189,9 @@ export default async function HomePage() {
             {/* CTA + wide stats card grid */}
             <div className="home-card-grid" style={{ marginBottom: 22 }}>
               {/* Today's review CTA */}
-              <div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {dueCount > 0 ? (
-                  <div className="card" style={{ padding: 18, background: "var(--ink)", color: "#fff", border: "none", position: "relative", overflow: "hidden" }}>
+                  <div className="card" style={{ flex: 1, padding: 18, background: "var(--ink)", color: "#fff", border: "none", position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", right: -20, top: -10, fontFamily: "var(--font-display)", fontSize: 180, fontStyle: "italic", color: "var(--saffron-500)", opacity: 0.18, lineHeight: 1, pointerEvents: "none" }}>α</div>
                     <div style={{ position: "relative" }}>
                       <div className="eyebrow" style={{ color: "var(--saffron-300)", marginBottom: 6 }}>Today&apos;s review</div>
@@ -211,7 +211,7 @@ export default async function HomePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="card" style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div className="card" style={{ flex: 1, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
                     <div>
                       <div className="eyebrow" style={{ marginBottom: 6, color: "var(--leaf-500)" }}>All caught up</div>
                       <div className="t-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 4 }}>No reviews due</div>

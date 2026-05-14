@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { gradeTypeOut, gradeVoice } from "@/lib/grading";
+import { gradeTypeOut, gradeVoice, RECALL_THRESHOLDS, gradeRecallPass } from "@/lib/grading";
 
 describe("gradeTypeOut", () => {
   it("exact match → pass, 100% accuracy, all words correct", () => {
@@ -54,6 +54,106 @@ describe("gradeTypeOut", () => {
     const result = gradeTypeOut("", "In the beginning");
     expect(result.pass).toBe(false);
     expect(result.accuracy).toBe(0);
+  });
+});
+
+describe("RECALL_THRESHOLDS", () => {
+  it("has three thresholds: 0.80, 0.90, 0.95", () => {
+    expect(RECALL_THRESHOLDS).toEqual([0.80, 0.90, 0.95]);
+  });
+});
+
+describe("gradeRecallPass", () => {
+  it("exact match → pass=true, accuracy=1, all words hit", () => {
+    const result = gradeRecallPass("the Lord is my shepherd", "the Lord is my shepherd", 0);
+    expect(result.pass).toBe(true);
+    expect(result.accuracy).toBe(1);
+    expect(result.wordResults).toEqual([
+      { word: "the", hit: true },
+      { word: "lord", hit: true },
+      { word: "is", hit: true },
+      { word: "my", hit: true },
+      { word: "shepherd", hit: true },
+    ]);
+  });
+
+  it("empty transcript → pass=false, accuracy=0, all words missed", () => {
+    const result = gradeRecallPass("", "the Lord is my shepherd", 0);
+    expect(result.pass).toBe(false);
+    expect(result.accuracy).toBe(0);
+    expect(result.wordResults.every((r) => !r.hit)).toBe(true);
+    expect(result.wordResults).toHaveLength(5);
+  });
+
+  it("zero overlap → pass=false, accuracy=0", () => {
+    const result = gradeRecallPass("foo bar baz", "the Lord is my shepherd", 0);
+    expect(result.pass).toBe(false);
+    expect(result.accuracy).toBe(0);
+  });
+
+  describe("wordResults hit/miss alignment", () => {
+    it("wordResults align to target words, missed words flagged hit=false", () => {
+      // target: "and it came to pass" — say only 3 of 5
+      const result = gradeRecallPass("and it came", "and it came to pass", 0);
+      expect(result.wordResults).toEqual([
+        { word: "and", hit: true },
+        { word: "it", hit: true },
+        { word: "came", hit: true },
+        { word: "to", hit: false },
+        { word: "pass", hit: false },
+      ]);
+    });
+
+    it("repeated word in transcript only gives credit equal to target occurrences", () => {
+      // target has 'and' twice; transcript has 'and' four times — only 2 credits
+      const result = gradeRecallPass("and and and and", "and peace and joy", 0);
+      expect(result.wordResults.filter((r) => r.hit)).toHaveLength(2);
+      expect(result.wordResults.find((r) => r.word === "peace")?.hit).toBe(false);
+    });
+  });
+
+  describe("threshold boundaries by passIndex", () => {
+    // 5-word target: 4/5=0.80, 3/5=0.60
+    const target5 = "one two three four five";
+
+    it("passIndex 0: 4/5 words (80%) → pass (≥0.80)", () => {
+      const result = gradeRecallPass("one two three four", target5, 0);
+      expect(result.pass).toBe(true);
+      expect(result.accuracy).toBeCloseTo(0.8);
+    });
+
+    it("passIndex 0: 3/5 words (60%) → fail (<0.80)", () => {
+      const result = gradeRecallPass("one two three", target5, 0);
+      expect(result.pass).toBe(false);
+    });
+
+    // 10-word target: 9/10=0.90, 8/10=0.80
+    const target10 = "a b c d e f g h i j";
+
+    it("passIndex 1: 9/10 words (90%) → pass (≥0.90)", () => {
+      const result = gradeRecallPass("a b c d e f g h i", target10, 1);
+      expect(result.pass).toBe(true);
+      expect(result.accuracy).toBeCloseTo(0.9);
+    });
+
+    it("passIndex 1: 8/10 words (80%) → fail (<0.90)", () => {
+      const result = gradeRecallPass("a b c d e f g h", target10, 1);
+      expect(result.pass).toBe(false);
+    });
+
+    // 20-word target: 19/20=0.95, 18/20=0.90
+    const target20 = "a b c d e f g h i j k l m n o p q r s t";
+
+    it("passIndex 2: 19/20 words (95%) → pass (≥0.95)", () => {
+      const result = gradeRecallPass("a b c d e f g h i j k l m n o p q r s", target20, 2);
+      expect(result.pass).toBe(true);
+      expect(result.accuracy).toBeCloseTo(0.95);
+    });
+
+    it("passIndex 2: 18/20 words (90%) → fail (<0.95)", () => {
+      const result = gradeRecallPass("a b c d e f g h i j k l m n o p q r", target20, 2);
+      expect(result.pass).toBe(false);
+    });
   });
 });
 

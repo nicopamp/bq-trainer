@@ -60,7 +60,11 @@ _Avoid_: finishing, completing, passing
 
 **Drill**:
 A spaced-repetition review session using one of four drill modes. Only verses in `review` or `mastered` state (or `learning` with a due date) appear in the Drill queue.
-_Avoid_: quiz session, review session, practice
+_Avoid_: quiz session, review session
+
+**Practice**:
+An off-schedule session using the same four Drill modes, initiated by the user regardless of FSRS due dates. Available from the home screen when no Drills are due. Distinct from a Drill, which is FSRS-triggered. The home screen CTA label is "Practice what you know."
+_Avoid_: free drill, unscheduled drill, recall session
 
 **Drill Mode**:
 The format of a single drill question. Four modes exist: Audio, Finish-it, Type-out, Ref-to-verse. See individual definitions below.

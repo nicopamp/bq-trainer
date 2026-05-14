@@ -152,6 +152,13 @@ html, body {
 .hm-cell.lvl-mastered { background: var(--hm-mastered); }
 .hm-cell.lvl-stale    { background: var(--hm-stale); }
 
+/* ── Pulse animation (grading indicator) ─────────────────────────── */
+@keyframes bqt-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+.bqt-pulse { animation: bqt-pulse 1.2s ease-in-out infinite; }
+
 /* ── Paper grain texture ──────────────────────────────────────────── */
 .paper-grain {
   position: absolute;

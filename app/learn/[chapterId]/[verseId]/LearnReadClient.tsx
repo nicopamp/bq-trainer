@@ -7,7 +7,7 @@ import { LearnStepHeader } from "@/components/ui/LearnStepHeader";
 import { chunkVerse } from "@/lib/chunking";
 import { advanceLearnStep } from "@/lib/actions";
 import { speakText, speakVerse, stopSpeaking } from "@/lib/tts";
-import { calculateWordOverlap, ASR_PASS_THRESHOLD } from "@/lib/grading";
+import { gradeRecallPass, type RecallPassResult } from "@/lib/grading";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 
 interface Props {
@@ -296,7 +296,7 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
 }) {
   const [passes, setPasses] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
+  const [lastResult, setLastResult] = useState<RecallPassResult | null>(null);
 
   const PASSES_NEEDED = 3;
 
@@ -305,25 +305,24 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
     if (next >= PASSES_NEEDED) onNext();
   };
 
-  const { startListening, stopListening, transcript, isListening, isSupported } =
+  const { startListening, stopListening, transcript, isListening, isGrading, isSupported } =
     useSpeechRecognition({
       interimResults: true,
       onFinal: (said) => {
-        const acc = calculateWordOverlap(said, text);
-        setLastAccuracy(acc);
-        if (acc >= ASR_PASS_THRESHOLD) handlePass(passes + 1);
+        const result = gradeRecallPass(said, text, passes);
+        setLastResult(result);
+        if (result.pass) handlePass(passes + 1);
       },
     });
 
   const handleMicTap = () => {
     if (isListening) { stopListening(); return; }
     if (!isSupported) { handlePass(passes + 1); return; }
-    setLastAccuracy(null);
+    setLastResult(null);
     startListening();
   };
 
-  const passed = lastAccuracy !== null && lastAccuracy >= 0.75;
-  const failed = lastAccuracy !== null && lastAccuracy < 0.75;
+  const showDiff = lastResult !== null && !lastResult.pass && !revealed;
 
   return (
     <div className="bqt-screen">
@@ -342,8 +341,14 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
           <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 160, justifyContent: "center" }}>
             {revealed ? (
               <div className="t-display" style={{ fontSize: 18, lineHeight: 1.4, color: "var(--ink)", textAlign: "center" }}>{text}</div>
+            ) : showDiff ? (
+              <div style={{ fontSize: 17, lineHeight: 1.7, fontFamily: "var(--font-display)", textAlign: "center" }}>
+                {lastResult.wordResults.map((r, i) => (
+                  <span key={i} style={{ color: r.hit ? "var(--ink)" : "var(--rust-500)", marginRight: 4 }}>{r.word}</span>
+                ))}
+              </div>
             ) : transcript ? (
-              <div style={{ fontSize: 16, lineHeight: 1.5, color: isListening ? "var(--ink-soft)" : passed ? "var(--leaf-500)" : failed ? "var(--rust-500)" : "var(--ink)", fontStyle: "italic", textAlign: "center" }}>
+              <div style={{ fontSize: 16, lineHeight: 1.5, color: isListening ? "var(--ink-soft)" : lastResult?.pass ? "var(--leaf-500)" : "var(--ink)", fontStyle: "italic", textAlign: "center" }}>
                 &ldquo;{transcript}&rdquo;
               </div>
             ) : (
@@ -352,9 +357,9 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
                 <div className="t-mono" style={{ fontSize: 11, color: "var(--ink-muted)", letterSpacing: "0.15em", textAlign: "center" }}>recall the whole verse</div>
               </>
             )}
-            {lastAccuracy !== null && !revealed && (
-              <div style={{ textAlign: "center", fontSize: 12, fontWeight: 600, color: passed ? "var(--leaf-500)" : "var(--rust-500)", marginTop: 4 }}>
-                {passed ? "✓ Pass!" : `${Math.round(lastAccuracy * 100)}% — try again`}
+            {lastResult !== null && !revealed && (
+              <div style={{ textAlign: "center", fontSize: 12, fontWeight: 600, color: lastResult.pass ? "var(--leaf-500)" : "var(--rust-500)", marginTop: 4 }}>
+                {lastResult.pass ? "✓ Pass!" : `${Math.round(lastResult.accuracy * 100)}% — missed words in red`}
               </div>
             )}
           </div>
@@ -387,7 +392,7 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
       </div>
 
       <div className="bottom-bar" style={{ padding: "20px 22px 28px", display: "flex", gap: 12, alignItems: "center" }}>
-        <button className="btn btn-ghost btn-md" style={{ width: 50, padding: 0 }} onClick={() => { setRevealed(!revealed); setLastAccuracy(null); }}>
+        <button className="btn btn-ghost btn-md" style={{ width: 50, padding: 0 }} onClick={() => { setRevealed(!revealed); setLastResult(null); }}>
           <Icon name={revealed ? "eye-off" : "eye"} size={16} color="var(--ink)" />
         </button>
         <button
@@ -398,11 +403,11 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "#fff",
           }}
           onClick={handleMicTap}
-          disabled={saving}
+          disabled={saving || isGrading}
         >
           <Icon name="mic-fill" size={20} color="#fff" />
-          <span className="t-display" style={{ fontSize: 16, fontWeight: 500 }}>
-            {isListening ? "Tap to stop" : saving ? "Saving…" : "Tap when ready"}
+          <span className={`t-display${isGrading ? " bqt-pulse" : ""}`} style={{ fontSize: 16, fontWeight: 500 }}>
+            {isGrading ? "Grading…" : isListening ? "Tap to stop" : saving ? "Saving…" : "Tap when ready"}
           </span>
         </button>
       </div>

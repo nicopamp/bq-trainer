@@ -337,7 +337,7 @@ export default async function HomePage() {
                       </Link>
                       <div className="hm-grid">
                         {verses.map((lvl, vi) => (
-                          <HMCell key={vi} level={lvl} label={`${ch}:${vi + 1}`} href={`/learn/${ch}/${vi + 1}`} />
+                          <HMCell key={vi} level={lvl} label={`${ch}:${vi + 1}`} href={`/learn/${ch}/${vi + 1}?from=home`} />
                         ))}
                       </div>
                       <div className="t-mono" style={{ fontSize: 12, color: "var(--ink-soft)", textAlign: "right" }}>{pct}%</div>

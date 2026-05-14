@@ -22,6 +22,7 @@ export function HMCell({ level, current = false, label, size, onClick, href }: H
     return (
       <Link
         href={href}
+        prefetch={false}
         className={`hm-cell lvl-${level}`}
         title={label}
         style={style}

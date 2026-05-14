@@ -59,9 +59,9 @@ describe("createSRSession", () => {
     expect(instances[0].stop).not.toHaveBeenCalled();
   });
 
-  it("does NOT call abort() when destroy() is called after recognition already ended", () => {
-    // Root cause of the original bug: calling stop/abort on an already-ended SR
-    // instance re-activates the mic in Safari.
+  it("calls abort() once in onend (to release Safari mic indicator), then no-op on destroy()", () => {
+    // onend calls abort() to force the mic indicator off in Safari.
+    // A subsequent destroy() call should not call abort() again (rec is already null).
     const { MockSR, instances } = makeMockSR();
     const session = createSRSession(
       MockSR,
@@ -70,10 +70,10 @@ describe("createSRSession", () => {
     );
 
     session.start();
-    instances[0].onend?.(); // recognition ends naturally (active → false)
-    session.destroy();      // should be a no-op on the rec instance
+    instances[0].onend?.(); // recognition ends naturally → abort() called once in onend
+    session.destroy();      // rec is null at this point, no additional abort
 
-    expect(instances[0].abort).not.toHaveBeenCalled();
+    expect(instances[0].abort).toHaveBeenCalledTimes(1);
     expect(instances[0].stop).not.toHaveBeenCalled();
   });
 

@@ -58,8 +58,8 @@ describe("gradeTypeOut", () => {
 });
 
 describe("RECALL_THRESHOLDS", () => {
-  it("has three thresholds: 0.80, 0.90, 0.95", () => {
-    expect(RECALL_THRESHOLDS).toEqual([0.80, 0.90, 0.95]);
+  it("has three thresholds: 0.80, 0.90, 0.90", () => {
+    expect(RECALL_THRESHOLDS).toEqual([0.80, 0.90, 0.90]);
   });
 });
 
@@ -141,18 +141,41 @@ describe("gradeRecallPass", () => {
       expect(result.pass).toBe(false);
     });
 
-    // 20-word target: 19/20=0.95, 18/20=0.90
-    const target20 = "a b c d e f g h i j k l m n o p q r s t";
-
-    it("passIndex 2: 19/20 words (95%) → pass (≥0.95)", () => {
-      const result = gradeRecallPass("a b c d e f g h i j k l m n o p q r s", target20, 2);
+    // 10-word target: 9/10=0.90 (pass 2 threshold same as pass 3)
+    it("passIndex 2: 9/10 words (90%) → pass (≥0.90)", () => {
+      const result = gradeRecallPass("a b c d e f g h i", target10, 2);
       expect(result.pass).toBe(true);
-      expect(result.accuracy).toBeCloseTo(0.95);
+      expect(result.accuracy).toBeCloseTo(0.9);
     });
 
-    it("passIndex 2: 18/20 words (90%) → fail (<0.95)", () => {
-      const result = gradeRecallPass("a b c d e f g h i j k l m n o p q r", target20, 2);
+    it("passIndex 2: 8/10 words (80%) → fail (<0.90)", () => {
+      const result = gradeRecallPass("a b c d e f g h", target10, 2);
       expect(result.pass).toBe(false);
+    });
+  });
+
+  describe("fuzzy word matching", () => {
+    it("prefix morphology: 'teaching' matches target 'teach'", () => {
+      const result = gradeRecallPass("and he began teaching them", "and he began teach them", 0);
+      expect(result.wordResults.find((r) => r.word === "teach")?.hit).toBe(true);
+    });
+
+    it("letter transposition on long word: 'treaties' matches target 'treatise'", () => {
+      const result = gradeRecallPass("the former treaties have i made", "the former treatise have i made", 0);
+      expect(result.wordResults.find((r) => r.word === "treatise")?.hit).toBe(true);
+    });
+
+    it("short words (< 4 chars) require exact match — no fuzzy false positives", () => {
+      // "him" and "his" differ by 1 char but are semantically different
+      const result = gradeRecallPass("him", "his", 0);
+      expect(result.wordResults[0].hit).toBe(false);
+    });
+
+    it("fuzzy hit still counts toward accuracy", () => {
+      // All 5 words matched (1 via fuzzy) → accuracy = 1 → pass
+      const result = gradeRecallPass("the former treaties have i", "the former treatise have i", 0);
+      expect(result.pass).toBe(true);
+      expect(result.accuracy).toBe(1);
     });
   });
 

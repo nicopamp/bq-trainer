@@ -51,16 +51,18 @@ export function createSRSession(
     };
 
     rec.onend = () => {
-      // Guard prevents double-fire if onend is triggered by an abort() call
-      // after the session has already ended naturally.
       if (!active) return;
       active = false;
       const text = finalText || lastTranscriptText; // fallback to interim on Safari/Firefox
       finalText = "";
       lastTranscriptText = "";
-      // Null rec so the browser can GC the instance and release the mic indicator.
-      // ensureRec() creates a fresh instance on the next start().
-      rec = null;
+      const r = rec;
+      rec = null; // ensureRec() creates a fresh instance on the next start()
+      // Replace handlers with no-ops BEFORE abort() so any re-fire is silently swallowed.
+      // Then abort() explicitly signals Safari to release the mic indicator.
+      r.onend = () => {};
+      r.onerror = () => {};
+      try { r.abort(); } catch {}
       callbacks.onEnd(text);
     };
 

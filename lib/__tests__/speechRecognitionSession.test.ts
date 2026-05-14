@@ -59,9 +59,9 @@ describe("createSRSession", () => {
     expect(instances[0].stop).not.toHaveBeenCalled();
   });
 
-  it("calls abort() once in onend (to release Safari mic indicator), then no-op on destroy()", () => {
-    // onend calls abort() to force the mic indicator off in Safari.
-    // A subsequent destroy() call should not call abort() again (rec is already null).
+  it("does NOT call abort() when recognition ends naturally — stop() in onresult handles mic release", () => {
+    // abort() on an ended Safari SR instance can briefly re-activate the mic.
+    // Mic release is handled by the explicit rec.stop() call in onresult instead.
     const { MockSR, instances } = makeMockSR();
     const session = createSRSession(
       MockSR,
@@ -70,10 +70,10 @@ describe("createSRSession", () => {
     );
 
     session.start();
-    instances[0].onend?.(); // recognition ends naturally → abort() called once in onend
-    session.destroy();      // rec is null at this point, no additional abort
+    instances[0].onend?.(); // recognition ends naturally
+    session.destroy();      // rec is already null, no abort
 
-    expect(instances[0].abort).toHaveBeenCalledTimes(1);
+    expect(instances[0].abort).not.toHaveBeenCalled();
     expect(instances[0].stop).not.toHaveBeenCalled();
   });
 
@@ -178,6 +178,46 @@ describe("createSRSession", () => {
     session.destroy();
 
     expect(instances[0].abort).not.toHaveBeenCalled();
+    expect(instances[0].stop).not.toHaveBeenCalled();
+  });
+
+  it("calls rec.stop() in onresult when a final result arrives (ensures Safari mic release)", () => {
+    // Safari requires an explicit stop() before onend to release the mic indicator.
+    // Without it, auto-stop via continuous=false fires onend but leaves the indicator on.
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: false, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    instances[0].onresult?.({
+      resultIndex: 0,
+      results: Object.assign([[{ transcript: "the verse" }]], {
+        0: Object.assign([{ transcript: "the verse" }], { isFinal: true }),
+      }),
+    });
+
+    expect(instances[0].stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT call rec.stop() for interim-only results", () => {
+    const { MockSR, instances } = makeMockSR();
+    const session = createSRSession(
+      MockSR,
+      { interimResults: true, lang: "en-US" },
+      { onTranscript: vi.fn(), onEnd: vi.fn(), onError: vi.fn() }
+    );
+
+    session.start();
+    instances[0].onresult?.({
+      resultIndex: 0,
+      results: Object.assign([[{ transcript: "partial" }]], {
+        0: Object.assign([{ transcript: "partial" }], { isFinal: false }),
+      }),
+    });
+
     expect(instances[0].stop).not.toHaveBeenCalled();
   });
 

@@ -41,13 +41,18 @@ export function createSRSession(
 
     rec.onresult = (e: any) => {
       let interim = "";
+      let hasFinal = false;
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t;
+        if (e.results[i].isFinal) { finalText += t; hasFinal = true; }
         else interim += t;
       }
       lastTranscriptText = finalText || interim;
       callbacks.onTranscript(lastTranscriptText);
+      // Explicit stop() on final result mirrors the user-tap path and ensures
+      // Safari releases the mic indicator. Without this, Safari's internal
+      // auto-stop (continuous=false) fires onend but leaves the indicator on.
+      if (hasFinal && active) rec.stop();
     };
 
     rec.onend = () => {
@@ -58,11 +63,12 @@ export function createSRSession(
       lastTranscriptText = "";
       const r = rec;
       rec = null; // ensureRec() creates a fresh instance on the next start()
-      // Replace handlers with no-ops BEFORE abort() so any re-fire is silently swallowed.
-      // Then abort() explicitly signals Safari to release the mic indicator.
+      // Replace handlers with no-ops to silence any late-firing events on the old instance.
+      // abort() is intentionally NOT called here — calling it on an ended Safari SR
+      // instance can briefly re-activate the mic. The explicit rec.stop() in onresult
+      // is what releases the indicator; by the time onend fires, the mic is already off.
       r.onend = () => {};
       r.onerror = () => {};
-      try { r.abort(); } catch {}
       callbacks.onEnd(text);
     };
 

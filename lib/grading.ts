@@ -2,8 +2,37 @@
  * Grading utilities for drill modes.
  *
  * Voice modes use ASR Tolerance (word-overlap, lenient) per ADR-0001.
- * Type-out uses Word-Perfect (strict character match) — handled in DrillClient.
+ * Type-out uses Word-Perfect (strict character match) per ADR-0001.
+ * gradeAttempt() is the single dispatch point — callers need not know which grader to call.
  */
+
+import type { DrillMode } from "@/lib/supabase/types";
+export type { DrillMode };
+
+export interface AttemptResult {
+  pass: boolean;
+  accuracy: number;
+  grade: 1 | 2 | 3 | 4;
+  wordResults: Array<{ word: string; correct: boolean }>;
+}
+
+/**
+ * Route a drill attempt to the correct grader and return a normalised result.
+ * Type-out → binary Good/Again (word-perfect, ADR-0001).
+ * Voice modes → 4-level grade via ASR Tolerance mapping (ADR-0001).
+ */
+export function gradeAttempt(
+  mode: DrillMode,
+  input: string,
+  target: string,
+): AttemptResult {
+  if (mode === "type_out") {
+    const r = gradeTypeOut(input, target);
+    return { pass: r.pass, accuracy: r.accuracy, grade: r.pass ? 3 : 1, wordResults: r.wordResults };
+  }
+  const r = gradeVoice(input, target);
+  return { pass: r.pass, accuracy: r.accuracy, grade: asrAccuracyToGrade(r.accuracy), wordResults: [] };
+}
 
 function normalizeWords(text: string): string[] {
   return text.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(Boolean);

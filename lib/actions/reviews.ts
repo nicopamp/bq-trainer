@@ -1,8 +1,9 @@
 "use server";
 
-import { createClient } from "../supabase/server";
 import { scheduleReview, Rating } from "../fsrs";
 import type { UserVerse } from "../supabase/types";
+import { withAuth } from "./withAuth";
+import { updateUserVerse, insertReview, refreshStreak } from "../supabase/mutations";
 
 type AnyRating = any; // ts-fsrs Rating enum lacks exported type
 
@@ -21,62 +22,32 @@ export async function submitReview({
   transcript?: string;
   accuracy?: number;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data: uv } = await supabase
-    .from("user_verses")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("verse_id", verseId)
-    .single();
-
-  if (!uv) throw new Error("UserVerse not found");
-
-  const ratingMap: Record<number, AnyRating> = { 1: Rating.Again, 2: Rating.Hard, 3: Rating.Good, 4: Rating.Easy };
-  const updates = scheduleReview(uv as UserVerse, ratingMap[grade]);
-
-  await Promise.all([
-    supabase
+  return withAuth(async (supabase, userId) => {
+    const { data: uv } = await supabase
       .from("user_verses")
-      .update(updates)
-      .eq("user_id", user.id)
-      .eq("verse_id", verseId),
-    supabase.from("reviews").insert({
-      user_id: user.id,
-      verse_id: verseId,
-      drill_mode: drillMode,
-      grade,
-      duration_ms: durationMs ?? null,
-      transcript: transcript ?? null,
-      accuracy: accuracy ?? null,
-    }),
-  ]);
+      .select("*")
+      .eq("user_id", userId)
+      .eq("verse_id", verseId)
+      .single();
 
-  await updateStreak(supabase, user.id);
-}
+    if (!uv) throw new Error("UserVerse not found");
 
-async function updateStreak(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const today = new Date().toISOString().split("T")[0];
-  const { data: streak } = await supabase
-    .from("streaks")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+    const ratingMap: Record<number, AnyRating> = { 1: Rating.Again, 2: Rating.Hard, 3: Rating.Good, 4: Rating.Easy };
+    const updates = scheduleReview(uv as UserVerse, ratingMap[grade]);
 
-  if (!streak) return;
+    await Promise.all([
+      updateUserVerse(supabase, userId, verseId, updates as Record<string, unknown>),
+      insertReview(supabase, {
+        user_id: userId,
+        verse_id: verseId,
+        drill_mode: drillMode,
+        grade,
+        duration_ms: durationMs ?? null,
+        transcript: transcript ?? null,
+        accuracy: accuracy ?? null,
+      }),
+    ]);
 
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
-  const last = streak.last_day;
-
-  if (last === today) return;
-
-  const current = last === yesterday ? streak.current_days + 1 : 1;
-  await supabase.from("streaks").upsert({
-    user_id: userId,
-    current_days: current,
-    best_days: Math.max(current, streak.best_days),
-    last_day: today,
+    await refreshStreak(supabase, userId);
   });
 }

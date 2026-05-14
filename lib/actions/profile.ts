@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "../supabase/server";
+import { withAuth } from "./withAuth";
+import { insertProfile, patchProfile } from "../supabase/mutations";
 
 export async function createProfile({
   fullName,
@@ -11,19 +12,9 @@ export async function createProfile({
   quizCategory: "TBQ" | "EABQ";
   church: string;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { error } = await supabase.from("profiles").insert({
-    user_id: user.id,
-    full_name: fullName,
-    quiz_category: quizCategory,
-    church,
-  });
-  if (error) throw new Error(error.message);
+  return withAuth((supabase, userId) =>
+    insertProfile(supabase, userId, { full_name: fullName, quiz_category: quizCategory, church })
+  );
 }
 
 export async function updateProfile({
@@ -35,20 +26,7 @@ export async function updateProfile({
   quizCategory: "TBQ" | "EABQ";
   church: string;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: fullName,
-      quiz_category: quizCategory,
-      church,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", user.id);
-  if (error) throw new Error(error.message);
+  return withAuth((supabase, userId) =>
+    patchProfile(supabase, userId, { full_name: fullName, quiz_category: quizCategory, church })
+  );
 }

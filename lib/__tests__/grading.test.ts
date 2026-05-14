@@ -58,8 +58,8 @@ describe("gradeTypeOut", () => {
 });
 
 describe("RECALL_THRESHOLDS", () => {
-  it("has three thresholds: 0.80, 0.90, 0.90", () => {
-    expect(RECALL_THRESHOLDS).toEqual([0.80, 0.90, 0.90]);
+  it("has three thresholds: 0.80, 0.85, 0.90", () => {
+    expect(RECALL_THRESHOLDS).toEqual([0.80, 0.85, 0.90]);
   });
 });
 

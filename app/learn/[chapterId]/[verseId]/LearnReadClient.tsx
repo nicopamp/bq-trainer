@@ -338,9 +338,11 @@ function RecallStep({ text, vref, backHref, book, onNext, saving }: {
             {revealed ? (
               <div className="t-display" style={{ fontSize: 18, lineHeight: 1.4, color: "var(--ink)", textAlign: "center" }}>{text}</div>
             ) : showDiff ? (
-              <div style={{ fontSize: 17, lineHeight: 1.7, fontFamily: "var(--font-display)", textAlign: "center" }}>
-                {lastResult.wordResults.map((r, i) => (
-                  <span key={i} style={{ color: r.hit ? "var(--ink)" : "var(--rust-500)", marginRight: 4 }}>{r.word}</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0 6px", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 17, lineHeight: 1.8 }}>
+                {text.split(/\s+/).filter(Boolean).map((originalWord, i) => (
+                  <span key={i} style={{ color: lastResult.wordResults[i]?.hit ? "var(--ink)" : "var(--rust-500)" }}>
+                    {originalWord}
+                  </span>
                 ))}
               </div>
             ) : transcript ? (

@@ -28,6 +28,7 @@ export function createSRSession(
 ): SRSession {
   let rec: any = null;
   let finalText = "";
+  let lastTranscriptText = ""; // tracks both final and interim for stop-mid-utterance fallback
   let active = false; // true only between rec.start() and onend/onerror firing
 
   function ensureRec() {
@@ -40,23 +41,38 @@ export function createSRSession(
 
     rec.onresult = (e: any) => {
       let interim = "";
+      let hasFinal = false;
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t;
+        if (e.results[i].isFinal) { finalText += t; hasFinal = true; }
         else interim += t;
       }
-      callbacks.onTranscript(finalText || interim);
+      lastTranscriptText = finalText || interim;
+      callbacks.onTranscript(lastTranscriptText);
+      // Explicit stop() on final result mirrors the user-tap path and ensures
+      // Safari releases the mic indicator. Without this, Safari's internal
+      // auto-stop (continuous=false) fires onend but leaves the indicator on.
+      if (hasFinal && active) rec.stop();
     };
 
     rec.onend = () => {
+      if (!active) return;
       active = false;
-      const text = finalText;
+      const text = finalText || lastTranscriptText; // fallback to interim on Safari/Firefox
       finalText = "";
+      lastTranscriptText = "";
+      const r = rec;
+      rec = null; // ensureRec() creates a fresh instance on the next start()
+      // No-ops silence any late events; abort() is intentionally omitted — calling it
+      // on an ended Safari SR re-activates the mic. stop() in onresult handles release.
+      r.onend = () => {};
+      r.onerror = () => {};
       callbacks.onEnd(text);
     };
 
     rec.onerror = () => {
       active = false;
+      rec = null;
       callbacks.onError();
     };
 
@@ -67,6 +83,7 @@ export function createSRSession(
     start() {
       const r = ensureRec();
       finalText = "";
+      lastTranscriptText = "";
       active = true;
       r.start();
     },

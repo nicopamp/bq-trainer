@@ -88,10 +88,6 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
               <Icon name={isPlaying ? "pause" : "play"} size={26} color="#fff" />
             </button>
             <div style={{ marginTop: 12, fontSize: 13, color: "rgba(255,255,255,.55)" }}>Tap to hear the opening words</div>
-            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={handlePlayCue}>
-              <Icon name={isPlaying ? "pause" : "rewind"} size={14} color="#fff" />
-              {isPlaying ? "Pause" : "Replay"}
-            </button>
           </div>
         </div>
         <div className="bottom-bar bottom-bar-dark" style={{ padding: "16px 22px 28px" }}>
@@ -117,10 +113,6 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
           <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: "var(--r-xl)", padding: 20, marginBottom: 14 }}>
             <div className="eyebrow" style={{ color: "rgba(255,255,255,.4)", marginBottom: 6, fontSize: 10 }}>opening words</div>
             <div className="t-display-italic" style={{ fontSize: 18, color: "rgba(255,255,255,.8)", lineHeight: 1.4 }}>&ldquo;{cueText}&rdquo;</div>
-            <button className="btn btn-sm" style={{ background: "rgba(255,255,255,.06)", color: "#fff", border: "1px solid rgba(255,255,255,.12)", marginTop: 12 }} onClick={handlePlayCue}>
-              <Icon name={isPlaying ? "pause" : "rewind"} size={14} color="#fff" />
-              {isPlaying ? "Pause" : "Replay"}
-            </button>
           </div>
 
           {transcript && (

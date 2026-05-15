@@ -3,8 +3,10 @@
 import { GRADUATION_FSRS_SEED } from "../fsrs";
 import { withAuth } from "./withAuth";
 import { updateUserVerse } from "../supabase/mutations";
+import { advanceLearnStepSchema } from "./schemas";
 
 export async function advanceLearnStep(verseId: number, nextStep: number) {
+  advanceLearnStepSchema.parse({ verseId, nextStep });
   return withAuth(async (supabase, userId) => {
     const isGraduating = nextStep >= 5;
     await updateUserVerse(supabase, userId, verseId, {

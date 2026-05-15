@@ -4,24 +4,13 @@ import { scheduleReview, Rating } from "../fsrs";
 import type { UserVerse } from "../supabase/types";
 import { withAuth } from "./withAuth";
 import { updateUserVerse, insertReview, refreshStreak } from "../supabase/mutations";
+import { submitReviewSchema, type SubmitReviewInput } from "./schemas";
 
 type AnyRating = any; // ts-fsrs Rating enum lacks exported type
 
-export async function submitReview({
-  verseId,
-  drillMode,
-  grade,
-  durationMs,
-  transcript,
-  accuracy,
-}: {
-  verseId: number;
-  drillMode: "audio" | "finish_it" | "type_out" | "ref_to_verse";
-  grade: 1 | 2 | 3 | 4;
-  durationMs?: number;
-  transcript?: string;
-  accuracy?: number;
-}) {
+export async function submitReview(input: SubmitReviewInput) {
+  const { verseId, drillMode, grade, durationMs, transcript, accuracy } =
+    submitReviewSchema.parse(input);
   return withAuth(async (supabase, userId) => {
     const { data: uv } = await supabase
       .from("user_verses")

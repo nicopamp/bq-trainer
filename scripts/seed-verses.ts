@@ -13,6 +13,8 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
+import { parseVerses } from "./seed-parser";
+
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -46,77 +48,6 @@ async function fetchChapterHtml(chapter: number): Promise<string> {
 
   if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
   return res.text();
-}
-
-// ── Parse ─────────────────────────────────────────────────────────────
-
-/**
- * Extracts verse text from Bible Gateway's print HTML.
- *
- * Structure (confirmed from live page):
- *   <span id="en-KJV-NNNNN" class="text Acts-{ch}-{v}">
- *     <span class="chapternum">1 </span>   ← only on verse 1
- *     <sup class="versenum">2 </sup>        ← verses 2+
- *     Verse text goes here...
- *   </span>
- *
- * Strategy: split on </p> so each paragraph (= one verse) is processed
- * independently. Within each paragraph, locate the opening span tag by its
- * class, take everything after the tag's closing >, then strip verse-number
- * elements and all remaining HTML.
- *
- * We cannot use a lazy span regex ([\s\S]*?<\/span>) because verse 1 has a
- * nested <span class="chapternum"> whose </span> would be matched first,
- * cutting off the actual verse text.
- */
-function parseVerses(html: string, chapter: number): Map<number, string> {
-  const verses = new Map<number, string>();
-  const verseClassRe = new RegExp(`\\btext Acts-${chapter}-(\\d+)\\b`);
-
-  // Each verse lives in its own <p>…</p> block.
-  for (const para of html.split("</p>")) {
-    const classMatch = verseClassRe.exec(para);
-    if (!classMatch) continue;
-
-    const verseNum = parseInt(classMatch[1], 10);
-
-    // Find where the opening span tag ends (the > that closes it).
-    const spanTagStart = para.search(/class="[^"]*\btext Acts-/);
-    if (spanTagStart === -1) continue;
-    const openTagEnd = para.indexOf(">", spanTagStart);
-    if (openTagEnd === -1) continue;
-
-    // Everything after the opening span tag is the verse content.
-    let content = para.slice(openTagEnd + 1);
-
-    // Strip verse-number elements before stripping all tags, so their
-    // numeric text ("3 ", "2 ", etc.) doesn't bleed into the verse.
-    content = content
-      .replace(/<span\b[^>]*class="[^"]*chapternum[^"]*"[^>]*>[\s\S]*?<\/span>/g, "")
-      .replace(/<sup\b[^>]*class="[^"]*versenum[^"]*"[^>]*>[\s\S]*?<\/sup>/g, "")
-      .replace(/<sup\b[^>]*class="[^"]*footnote[^"]*"[^>]*>[\s\S]*?<\/sup>/g, "")
-      .replace(/<sup\b[^>]*data-fn[^>]*>[\s\S]*?<\/sup>/g, "")
-      .replace(/<a\b[^>]*class="[^"]*crossreference[^"]*"[^>]*>[\s\S]*?<\/a>/g, "");
-
-    const text = stripHtml(content);
-    if (text) verses.set(verseNum, text);
-  }
-
-  return verses;
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0*39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 // ── Main ──────────────────────────────────────────────────────────────

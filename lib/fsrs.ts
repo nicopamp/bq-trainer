@@ -28,6 +28,7 @@ export function toCard(uv: UserVerse): Card {
       ? Math.floor((Date.now() - new Date(uv.last_reviewed_at).getTime()) / 86_400_000)
       : 0,
     scheduled_days: 0,
+    learning_steps: 0, // we use our own 5-step learn flow, not ts-fsrs multi-step
     reps: uv.reps,
     lapses: uv.lapses,
     state: fsrsState(uv.state),

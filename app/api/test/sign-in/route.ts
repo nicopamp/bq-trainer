@@ -1,11 +1,14 @@
 // Dev/test only — signs in a user and sets session cookies server-side.
-// Returns 404 in production.
+// Returns 404 in production or when E2E_TEST_SECRET header is wrong.
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { testSignInGate } from "@/lib/auth/testSignInGate";
 
 export async function POST(request: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
+  const suppliedSecret = request.headers.get("x-test-secret");
+  const { allowed } = testSignInGate(suppliedSecret);
+  if (!allowed) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

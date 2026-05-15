@@ -22,7 +22,8 @@
     "openai": "^6.37.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "ts-fsrs": "^4.6.0"
+    "ts-fsrs": "^4.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",

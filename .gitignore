@@ -32,3 +32,6 @@ yarn-error.log*
 /playwright-report/
 
 # audio files are committed — run `npm run generate-audio` once to create them
+
+# supabase CLI temp files
+/supabase/.temp/

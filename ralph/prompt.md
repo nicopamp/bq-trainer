@@ -1,8 +1,8 @@
 # ISSUES
 
-Issues are stored in Github. Parse them to understand the open issues.
+Issues are stored in Github. Parse them to understand the open issues. Work only issues labeled ready-for-agent. Do NOT work the PRD issue itself.
 
-You will work on the AFK issues only, not the HITL ones.
+You will work on the AFK issues only, not the HITL ones. 
 
 You've also been passed a file containing the last few commits. Review these to understand what work has been done.
 

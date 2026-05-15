@@ -73,24 +73,21 @@ class TTSSpeaker implements Speaker {
   }
 }
 
-// ── VerseSpeaker — prerecorded audio adapter, falls back to TTS ───
+// ── Mp3Speaker — prerecorded audio adapter, falls back to TTS ────
 
-class VerseSpeaker implements Speaker {
-  private chapter: number;
-  private verse: number;
+class Mp3Speaker implements Speaker {
+  private url: string;
   private tts: TTSSpeaker;
   private audio: HTMLAudioElement | null = null;
 
-  constructor(chapter: number, verse: number, ttsRate = 0.82) {
-    this.chapter = chapter;
-    this.verse = verse;
+  constructor(url: string, ttsRate = 0.82) {
+    this.url = url;
     this.tts = new TTSSpeaker(ttsRate);
   }
 
   speak(text: string, onEnd?: () => void): void {
     if (typeof window === "undefined") return;
-    const url = `/audio/acts_${this.chapter}_${this.verse}.mp3`;
-    const audio = new Audio(url);
+    const audio = new Audio(this.url);
     this.audio = audio;
     audio.onended = () => { this.audio = null; onEnd?.(); };
     audio.onerror = () => { this.audio = null; this.tts.speak(text, onEnd); };
@@ -125,7 +122,14 @@ export function speakText(text: string, rate = 0.82, onEnd?: () => void): void {
 
 export function speakVerse(chapter: number, verse: number, text: string, onEnd?: () => void): void {
   stopSpeaking();
-  const speaker = new VerseSpeaker(chapter, verse);
+  const speaker = new Mp3Speaker(`/audio/acts_${chapter}_${verse}.mp3`);
   activeSpeaker = speaker;
   speaker.speak(text, () => { activeSpeaker = null; onEnd?.(); });
+}
+
+export function speakCue(chapter: number, verse: number, cueText: string, onEnd?: () => void): void {
+  stopSpeaking();
+  const speaker = new Mp3Speaker(`/audio/acts_${chapter}_${verse}_cue.mp3`);
+  activeSpeaker = speaker;
+  speaker.speak(cueText, () => { activeSpeaker = null; onEnd?.(); });
 }

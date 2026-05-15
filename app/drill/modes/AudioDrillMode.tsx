@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { speakText, stopSpeaking } from "@/lib/tts";
+import { speakCue, stopSpeaking } from "@/lib/tts";
 import { useVoiceGrading } from "@/lib/useVoiceGrading";
 import type { DrillModeProps } from "../drillTypes";
 
@@ -51,7 +51,7 @@ export function AudioDrillMode({ header, item, vref, onResult, shortcuts }: Dril
       setIsPlaying(false);
     } else {
       setIsPlaying(true);
-      speakText(cueText, 0.82, () => setIsPlaying(false));
+      speakCue(item.chapter, Number(item.verseNum), cueText, () => setIsPlaying(false));
     }
   };
 

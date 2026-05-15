@@ -2,31 +2,10 @@
  * Pure parsing utilities extracted from seed-verses.ts so they can be unit-tested.
  */
 
-const NAMED_ENTITIES: Record<string, string> = {
-  nbsp: " ",
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-};
+import { parse } from "node-html-parser";
 
 export function stripHtml(html: string): string {
-  // Handle > inside quoted attribute values to avoid leaving tag fragments as text.
-  // CodeQL js/incomplete-multi-character-sanitization: <[^>]+> stops at the first >
-  // inside a value like alt="a>b", leaving 'b">' in the output.
-  const noTags = html.replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, "");
-
-  // Decode all entities in a single pass — a sequential chain like
-  // &amp;→& then &lt;→< would incorrectly turn &amp;lt; into <.
-  // CodeQL js/double-escaping: sequential chained replaces cause this.
-  return noTags
-    .replace(/&(?:([a-z]+)|#(\d+)|#x([\da-f]+));/gi, (match, name, dec, hex) => {
-      if (name) return NAMED_ENTITIES[name.toLowerCase()] ?? match;
-      if (dec) return String.fromCharCode(Number(dec));
-      return String.fromCharCode(parseInt(hex, 16));
-    })
-    .replace(/\s+/g, " ")
-    .trim();
+  return parse(html).textContent.replace(/\s+/g, " ").trim();
 }
 
 /**

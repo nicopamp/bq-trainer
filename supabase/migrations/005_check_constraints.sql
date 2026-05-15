@@ -1,5 +1,7 @@
 -- Defense-in-depth CHECK constraints mirroring the Zod schemas in lib/actions/schemas.ts.
 -- grade between 1 and 4 already exists on reviews from the initial migration.
+-- String-field constraints use trim() to match the nonEmptyTrimmed() Zod helper,
+-- so whitespace-only values are rejected at the DB level as well.
 
 alter table user_verses
   add constraint user_verses_learn_step_range
@@ -9,13 +11,13 @@ alter table events
   add constraint events_end_chapter_range
     check (end_chapter between 1 and 150),
   add constraint events_name_length
-    check (length(name) between 1 and 80);
+    check (length(trim(name)) between 1 and 80);
 
 alter table profiles
   add constraint profiles_full_name_length
-    check (length(full_name) between 1 and 80),
+    check (length(trim(full_name)) between 1 and 80),
   add constraint profiles_church_length
-    check (length(church) between 1 and 120);
+    check (length(trim(church)) between 1 and 120);
 
 alter table reviews
   add constraint reviews_transcript_length

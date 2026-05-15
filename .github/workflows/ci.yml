@@ -36,5 +36,8 @@ jobs:
 
       - name: Guard against SERVICE_ROLE in app code
         run: |
-          grep -rn SERVICE_ROLE app/ lib/ components/; ec=$?
+          set +e
+          grep -rn SERVICE_ROLE app/ lib/ components/
+          ec=$?
+          set -e
           [ $ec -eq 1 ]

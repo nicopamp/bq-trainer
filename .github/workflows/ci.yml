@@ -30,3 +30,14 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high || true
+
+      - name: Guard against SERVICE_ROLE in app code
+        run: |
+          set +e
+          grep -rn SERVICE_ROLE app/ lib/ components/
+          ec=$?
+          set -e
+          [ $ec -eq 1 ]

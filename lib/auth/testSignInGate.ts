@@ -6,10 +6,13 @@ export function testSignInGate(suppliedSecret: string | null): { allowed: boolea
   const expected = process.env.E2E_TEST_SECRET;
   if (!expected || !suppliedSecret) return { allowed: false };
 
-  // Pad both to the same length so timingSafeEqual never throws on length mismatch
+  // Normalize to same length with null-byte fill (not spaces) so trailing
+  // whitespace differences are preserved and timingSafeEqual never throws
   const len = Math.max(expected.length, suppliedSecret.length, 64);
-  const a = Buffer.from(expected.padEnd(len));
-  const b = Buffer.from(suppliedSecret.padEnd(len));
+  const a = Buffer.alloc(len, 0);
+  const b = Buffer.alloc(len, 0);
+  a.write(expected);
+  b.write(suppliedSecret);
 
   return { allowed: timingSafeEqual(a, b) };
 }

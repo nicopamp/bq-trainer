@@ -44,4 +44,8 @@ describe("testSignInGate", () => {
     expect(() => testSignInGate(SECRET + SECRET + SECRET)).not.toThrow();
     expect(testSignInGate(SECRET + SECRET + SECRET)).toEqual({ allowed: false });
   });
+
+  it("blocks secret with trailing space even though base matches", () => {
+    expect(testSignInGate(SECRET + " ")).toEqual({ allowed: false });
+  });
 });

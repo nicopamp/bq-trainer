@@ -35,4 +35,6 @@ jobs:
         run: npm audit --audit-level=high || true
 
       - name: Guard against SERVICE_ROLE in app code
-        run: "! grep -rn SERVICE_ROLE app/ lib/ components/"
+        run: |
+          grep -rn SERVICE_ROLE app/ lib/ components/; ec=$?
+          [ $ec -eq 1 ]

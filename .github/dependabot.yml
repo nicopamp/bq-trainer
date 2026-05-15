@@ -4,6 +4,15 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: eslint
+        versions: [">=10"]
+      - dependency-name: eslint-config-next
+        versions: [">=16"]
+      - dependency-name: typescript
+        versions: [">=6"]
+      - dependency-name: "@types/node"
+        versions: [">=23"]
     groups:
       production-dependencies:
         dependency-type: production

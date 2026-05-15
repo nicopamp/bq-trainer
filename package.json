@@ -16,13 +16,13 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.6.1",
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.49.8",
-    "next": "^15.3.2",
+    "next": "^16.2.6",
     "openai": "^6.37.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "ts-fsrs": "^4.6.0",
+    "ts-fsrs": "^5.3.3",
     "zod": "^4.4.3"
   },
   "overrides": {
